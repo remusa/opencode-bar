@@ -25,6 +25,7 @@
 
 - **Real-time Menu Bar Display**: View current usage and limits directly from the menu bar icon
 - **Visual Progress Indicator**: Color changes based on usage (green → yellow → orange → red)
+- **Usage History & Prediction**: Track daily usage and predict end-of-month totals with estimated costs
 - **Add-on Cost Tracking**: Shows additional costs when exceeding the limit
 - **Auto Refresh**: Configurable auto-update intervals from 10 seconds to 30 minutes
 - **Launch at Login**: Option to automatically start on macOS login
@@ -64,11 +65,21 @@ open CopilotMonitor/CopilotMonitor.xcodeproj
 
 | Menu Item | Description | Shortcut |
 |-----------|-------------|----------|
+| Usage History | View daily history and end-of-month predictions | - |
 | Refresh | Manually refresh usage data | `⌘R` |
 | Auto Refresh | Set auto-refresh interval (10s~30min) | - |
 | Open Billing | Open GitHub billing page | `⌘B` |
 | Launch at Login | Toggle auto-start on login | - |
 | Quit | Quit the app | `⌘Q` |
+
+### Usage History & Prediction
+
+The app tracks your daily usage to provide smart predictions:
+
+- **📈 Predicted EOM**: Estimates your total requests by the end of the month based on recent patterns
+- **💸 Predicted Add-on**: Warns you if you're likely to exceed your plan limit and incur extra costs
+- **⚙️ Prediction Period**: Configure the prediction algorithm to use the last 7, 14, or 21 days of data (weighted average)
+- **Daily Log**: View your request count for the past 7 days
 
 ## How It Works
 
