@@ -699,6 +699,7 @@ final class StatusBarController: NSObject {
         
         Task {
             await performFetchUsage()
+            await fetchMultiProviderData()
         }
     }
     
@@ -929,6 +930,162 @@ final class StatusBarController: NSObject {
             handleFetchError(UsageFetcherError.noUsageData)
             isFetching = false
         }
+    }
+    
+    // MARK: - Multi-Provider Fetch
+    
+    private func fetchMultiProviderData() async {
+        let enabledProviders = ProviderManager.shared.getAllProviders().filter { provider in
+            isProviderEnabled(provider.identifier) && provider.identifier != .copilot
+        }
+        
+        guard !enabledProviders.isEmpty else {
+            logger.info("fetchMultiProviderData: No enabled providers, skipping")
+            return
+        }
+        
+        logger.info("fetchMultiProviderData: Fetching \(enabledProviders.count) providers")
+        
+        let results = await ProviderManager.shared.fetchAll()
+        
+        let filteredResults = results.filter { (identifier, _) in
+            isProviderEnabled(identifier) && identifier != .copilot
+        }
+        
+        await MainActor.run {
+            self.providerResults = filteredResults
+            self.updateMultiProviderMenu()
+        }
+        
+        logger.info("fetchMultiProviderData: Completed with \(filteredResults.count) results")
+    }
+    
+    private func updateMultiProviderMenu() {
+        guard let historyIndex = menu.items.firstIndex(of: historyMenuItem) else { return }
+        
+        var itemsToRemove: [NSMenuItem] = []
+        for i in (historyIndex + 1)..<menu.items.count {
+            let item = menu.items[i]
+            if item == signInItem { break }
+            if item.tag == 999 {
+                itemsToRemove.append(item)
+            }
+        }
+        itemsToRemove.forEach { menu.removeItem($0) }
+        
+        guard !providerResults.isEmpty else { return }
+        
+        var insertIndex = historyIndex + 1
+        
+        let separator1 = NSMenuItem.separator()
+        separator1.tag = 999
+        menu.insertItem(separator1, at: insertIndex)
+        insertIndex += 1
+        
+        let payAsYouGoHeader = NSMenuItem(title: "Pay-as-you-go", action: nil, keyEquivalent: "")
+        payAsYouGoHeader.isEnabled = false
+        payAsYouGoHeader.tag = 999
+        menu.insertItem(payAsYouGoHeader, at: insertIndex)
+        insertIndex += 1
+        
+        var hasPayAsYouGo = false
+        for (identifier, usage) in providerResults {
+            if case .payAsYouGo(let utilization, _) = usage {
+                hasPayAsYouGo = true
+                let item = createPayAsYouGoMenuItem(identifier: identifier, utilization: utilization)
+                item.tag = 999
+                menu.insertItem(item, at: insertIndex)
+                insertIndex += 1
+            }
+        }
+        
+        if !hasPayAsYouGo {
+            let noItem = NSMenuItem(title: "  No providers", action: nil, keyEquivalent: "")
+            noItem.isEnabled = false
+            noItem.tag = 999
+            menu.insertItem(noItem, at: insertIndex)
+            insertIndex += 1
+        }
+        
+        let separator2 = NSMenuItem.separator()
+        separator2.tag = 999
+        menu.insertItem(separator2, at: insertIndex)
+        insertIndex += 1
+        
+        let quotaHeader = NSMenuItem(title: "Quota Status", action: nil, keyEquivalent: "")
+        quotaHeader.isEnabled = false
+        quotaHeader.tag = 999
+        menu.insertItem(quotaHeader, at: insertIndex)
+        insertIndex += 1
+        
+        var hasQuota = false
+        for (identifier, usage) in providerResults {
+            if case .quotaBased(let remaining, let entitlement, _) = usage {
+                hasQuota = true
+                let percentage = entitlement > 0 ? (Double(remaining) / Double(entitlement)) * 100 : 0
+                let item = createQuotaMenuItem(identifier: identifier, percentage: percentage)
+                item.tag = 999
+                menu.insertItem(item, at: insertIndex)
+                insertIndex += 1
+            }
+        }
+        
+        if !hasQuota {
+            let noItem = NSMenuItem(title: "  No providers", action: nil, keyEquivalent: "")
+            noItem.isEnabled = false
+            noItem.tag = 999
+            menu.insertItem(noItem, at: insertIndex)
+            insertIndex += 1
+        }
+        
+        let separator3 = NSMenuItem.separator()
+        separator3.tag = 999
+        menu.insertItem(separator3, at: insertIndex)
+    }
+    
+    private func createPayAsYouGoMenuItem(identifier: ProviderIdentifier, utilization: Double) -> NSMenuItem {
+        let title = String(format: "%@    %.1f%%", identifier.displayName, utilization)
+        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        item.image = iconForProvider(identifier)
+        return item
+    }
+    
+    private func createQuotaMenuItem(identifier: ProviderIdentifier, percentage: Double) -> NSMenuItem {
+        let title = String(format: "%@    %.0f%% remaining", identifier.displayName, percentage)
+        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        item.image = iconForProvider(identifier)
+        
+        if percentage < 20 {
+            item.image = tintedImage(iconForProvider(identifier), color: .systemRed)
+        }
+        
+        return item
+    }
+    
+    private func iconForProvider(_ identifier: ProviderIdentifier) -> NSImage? {
+        let symbolName: String
+        switch identifier {
+        case .copilot:
+            symbolName = "terminal.fill"
+        case .claude:
+            symbolName = "brain.head.profile"
+        case .codex:
+            symbolName = "cpu"
+        case .geminiCLI:
+            symbolName = "sparkles"
+        }
+        return NSImage(systemSymbolName: symbolName, accessibilityDescription: identifier.displayName)
+    }
+    
+    private func tintedImage(_ image: NSImage?, color: NSColor) -> NSImage? {
+        guard let image = image else { return nil }
+        let tinted = image.copy() as! NSImage
+        tinted.lockFocus()
+        color.set()
+        let rect = NSRect(origin: .zero, size: tinted.size)
+        rect.fill(using: .sourceAtop)
+        tinted.unlockFocus()
+        return tinted
     }
     
     private func evalJSONString(_ js: String, in webView: WKWebView) async throws -> String {
