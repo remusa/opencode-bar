@@ -17,10 +17,15 @@ final class CodexProvider: ProviderProtocol {
         let secondary_window: RateLimitWindow?
     }
     
+    private struct CreditsInfo: Codable {
+        let balance: Double?
+        let unlimited: Bool?
+    }
+    
     private struct CodexResponse: Codable {
         let plan_type: String?
         let rate_limit: RateLimit
-        let credits: [String: AnyCodable]?
+        let credits: CreditsInfo?
     }
     
     func fetch() async throws -> ProviderResult {
@@ -67,16 +72,34 @@ final class CodexProvider: ProviderProtocol {
         }
         
         let primaryWindow = codexResponse.rate_limit.primary_window
-        let usedPercent = primaryWindow.used_percent
-        let resetAfterSeconds = primaryWindow.reset_after_seconds
+        let secondaryWindow = codexResponse.rate_limit.secondary_window
+        let primaryUsedPercent = primaryWindow.used_percent
+        let primaryResetSeconds = primaryWindow.reset_after_seconds
+        let secondaryUsedPercent = secondaryWindow?.used_percent ?? 0.0
+        let secondaryResetSeconds = secondaryWindow?.reset_after_seconds ?? 0
         
-        let remaining = Int(100 - usedPercent)
+        // Calculate reset dates from seconds
+        let now = Date()
+        let primaryResetDate = now.addingTimeInterval(TimeInterval(primaryResetSeconds))
+        let secondaryResetDate = secondaryWindow != nil ? now.addingTimeInterval(TimeInterval(secondaryResetSeconds)) : nil
+        
+        let remaining = Int(100 - primaryUsedPercent)
         let entitlement = 100
         
-        logger.info("Successfully fetched Codex usage: \(usedPercent)% used, \(remaining)% remaining, resets in \(resetAfterSeconds)s")
+        logger.info("Successfully fetched Codex usage: primary=\(primaryUsedPercent)%, secondary=\(secondaryUsedPercent)%, plan=\(codexResponse.plan_type ?? "unknown"), credits=\(codexResponse.credits?.balance ?? 0)")
+        
+        // Populate DetailedUsage with all available fields
+        let details = DetailedUsage(
+            dailyUsage: primaryUsedPercent,
+            secondaryUsage: secondaryUsedPercent,
+            secondaryReset: secondaryResetDate,
+            primaryReset: primaryResetDate,
+            creditsBalance: codexResponse.credits?.balance,
+            planType: codexResponse.plan_type
+        )
         
         let usage = ProviderUsage.quotaBased(remaining: remaining, entitlement: entitlement, overagePermitted: false)
-        return ProviderResult(usage: usage, details: nil)
+        return ProviderResult(usage: usage, details: details)
     }
 }
 
