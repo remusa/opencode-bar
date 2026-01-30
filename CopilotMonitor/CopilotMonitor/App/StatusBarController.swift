@@ -991,19 +991,19 @@ final class StatusBarController: NSObject {
          
          var hasPayAsYouGo = false
          
-         // Copilot Add-on (if overage exists)
-         if let copilotUsage = currentUsage, copilotUsage.netBilledAmount > 0 {
-             hasPayAsYouGo = true
-             let addOnItem = NSMenuItem(
-                 title: String(format: "Copilot Add-on    $%.2f", copilotUsage.netBilledAmount),
-                 action: nil,
-                 keyEquivalent: ""
-             )
-             addOnItem.image = iconForProvider(.copilot)
-             addOnItem.tag = 999
-             menu.insertItem(addOnItem, at: insertIndex)
-             insertIndex += 1
-         }
+          // Copilot Add-on (always show, even when $0.00)
+          if let copilotUsage = currentUsage {
+              hasPayAsYouGo = true
+              let addOnItem = NSMenuItem(
+                  title: String(format: "Copilot Add-on    $%.2f", copilotUsage.netBilledAmount),
+                  action: nil,
+                  keyEquivalent: ""
+              )
+              addOnItem.image = iconForProvider(.copilot)
+              addOnItem.tag = 999
+              menu.insertItem(addOnItem, at: insertIndex)
+              insertIndex += 1
+          }
          
           for (identifier, result) in providerResults {
              if case .payAsYouGo(let utilization, _, _) = result.usage {
