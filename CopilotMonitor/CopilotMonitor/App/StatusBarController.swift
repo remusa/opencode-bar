@@ -1063,22 +1063,20 @@ final class StatusBarController: NSObject {
     }
     
     private func iconForProvider(_ identifier: ProviderIdentifier) -> NSImage? {
-        let symbolName: String
         switch identifier {
         case .copilot:
-            symbolName = "terminal.fill"
+            return NSImage(named: "CopilotIcon")
         case .claude:
-            symbolName = "brain.head.profile"
+            return NSImage(named: "ClaudeIcon")
         case .codex:
-            symbolName = "cpu"
+            return NSImage(named: "CodexIcon")
         case .geminiCLI:
-            symbolName = "sparkles"
-        case .openRouter:
-            symbolName = "network"
+            return NSImage(named: "GeminiIcon")
         case .openCode:
-            symbolName = "code"
+            return NSImage(named: "OpencodeIcon")
+        case .openRouter:
+            return NSImage(systemSymbolName: "arrow.triangle.branch", accessibilityDescription: identifier.displayName)
         }
-        return NSImage(systemSymbolName: symbolName, accessibilityDescription: identifier.displayName)
     }
     
     private func tintedImage(_ image: NSImage?, color: NSColor) -> NSImage? {

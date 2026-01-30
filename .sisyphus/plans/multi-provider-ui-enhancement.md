@@ -889,7 +889,7 @@ Parallel Speedup: ~35% faster than sequential
 
 ---
 
-- [ ] 3. OpenRouterProvider 구현
+- [x] 3. OpenRouterProvider 구현
 
   **What to do**:
   - `Providers/OpenRouterProvider.swift` 파일 생성
