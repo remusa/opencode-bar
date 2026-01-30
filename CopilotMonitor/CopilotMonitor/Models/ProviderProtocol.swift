@@ -2,9 +2,9 @@ import Foundation
 
 /// Defines the type of provider based on billing model
 enum ProviderType {
-    /// Pay-as-you-go model (e.g., Claude, Codex)
+    /// Pay-as-you-go model (e.g., OpenRouter, OpenCode)
     case payAsYouGo
-    /// Quota-based model with monthly reset (e.g., Copilot, Gemini CLI)
+    /// Quota-based model with monthly reset (e.g., Copilot, Claude, Codex, Gemini CLI)
     case quotaBased
 }
 

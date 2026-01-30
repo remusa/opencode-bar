@@ -5,7 +5,7 @@ private let logger = Logger(subsystem: "com.copilotmonitor", category: "CodexPro
 
 final class CodexProvider: ProviderProtocol {
     let identifier: ProviderIdentifier = .codex
-    let type: ProviderType = .payAsYouGo
+    let type: ProviderType = .quotaBased
     
     private struct RateLimitWindow: Codable {
         let used_percent: Double
@@ -69,11 +69,13 @@ final class CodexProvider: ProviderProtocol {
         let primaryWindow = codexResponse.rate_limit.primary_window
         let usedPercent = primaryWindow.used_percent
         let resetAfterSeconds = primaryWindow.reset_after_seconds
-        let resetAt = Date(timeIntervalSinceNow: TimeInterval(resetAfterSeconds))
         
-        logger.info("Successfully fetched Codex usage: \(usedPercent)% used, resets in \(resetAfterSeconds)s")
+        let remaining = Int(100 - usedPercent)
+        let entitlement = 100
         
-        return .payAsYouGo(utilization: usedPercent, resetsAt: resetAt)
+        logger.info("Successfully fetched Codex usage: \(usedPercent)% used, \(remaining)% remaining, resets in \(resetAfterSeconds)s")
+        
+        return .quotaBased(remaining: remaining, entitlement: entitlement, overagePermitted: false)
     }
 }
 
