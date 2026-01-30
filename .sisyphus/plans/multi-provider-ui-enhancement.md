@@ -1892,7 +1892,7 @@ throw ProviderError.authenticationFailed("API key not found")
 
 ---
 
-- [ ] 7. GitHub Copilot 이중 표시 (Quota + Pay-as-you-go)
+- [x] 7. GitHub Copilot 이중 표시 (Quota + Pay-as-you-go)
 
   **What to do**:
   - **Technical Design Decisions 섹션의 "4. Copilot 이중 표시 삽입 지점" 참조**

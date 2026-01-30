@@ -960,20 +960,21 @@ final class StatusBarController: NSObject {
         logger.info("fetchMultiProviderData: Completed with \(filteredResults.count) results")
     }
     
-    private func updateMultiProviderMenu() {
-        guard let historyIndex = menu.items.firstIndex(of: historyMenuItem) else { return }
-        
-        var itemsToRemove: [NSMenuItem] = []
-        for i in (historyIndex + 1)..<menu.items.count {
-            let item = menu.items[i]
-            if item == signInItem { break }
-            if item.tag == 999 {
-                itemsToRemove.append(item)
-            }
-        }
-        itemsToRemove.forEach { menu.removeItem($0) }
-        
-        guard !providerResults.isEmpty else { return }
+     private func updateMultiProviderMenu() {
+         guard let historyIndex = menu.items.firstIndex(of: historyMenuItem) else { return }
+         
+         var itemsToRemove: [NSMenuItem] = []
+         for i in (historyIndex + 1)..<menu.items.count {
+             let item = menu.items[i]
+             if item == signInItem { break }
+             if item.tag == 999 {
+                 itemsToRemove.append(item)
+             }
+         }
+         itemsToRemove.forEach { menu.removeItem($0) }
+         
+         let hasCopilotData = currentUsage != nil
+         guard !providerResults.isEmpty || hasCopilotData else { return }
         
         var insertIndex = historyIndex + 1
         
@@ -982,14 +983,29 @@ final class StatusBarController: NSObject {
         menu.insertItem(separator1, at: insertIndex)
         insertIndex += 1
         
-        let payAsYouGoHeader = NSMenuItem(title: "Pay-as-you-go", action: nil, keyEquivalent: "")
-        payAsYouGoHeader.isEnabled = false
-        payAsYouGoHeader.tag = 999
-        menu.insertItem(payAsYouGoHeader, at: insertIndex)
-        insertIndex += 1
-        
-        var hasPayAsYouGo = false
-        for (identifier, result) in providerResults {
+         let payAsYouGoHeader = NSMenuItem(title: "Pay-as-you-go", action: nil, keyEquivalent: "")
+         payAsYouGoHeader.isEnabled = false
+         payAsYouGoHeader.tag = 999
+         menu.insertItem(payAsYouGoHeader, at: insertIndex)
+         insertIndex += 1
+         
+         var hasPayAsYouGo = false
+         
+         // Copilot Add-on (if overage exists)
+         if let copilotUsage = currentUsage, copilotUsage.netBilledAmount > 0 {
+             hasPayAsYouGo = true
+             let addOnItem = NSMenuItem(
+                 title: String(format: "Copilot Add-on    $%.2f", copilotUsage.netBilledAmount),
+                 action: nil,
+                 keyEquivalent: ""
+             )
+             addOnItem.image = iconForProvider(.copilot)
+             addOnItem.tag = 999
+             menu.insertItem(addOnItem, at: insertIndex)
+             insertIndex += 1
+         }
+         
+         for (identifier, result) in providerResults {
             if case .payAsYouGo(let utilization, _) = result.usage {
                 hasPayAsYouGo = true
                 let item = createPayAsYouGoMenuItem(identifier: identifier, utilization: utilization)
@@ -1017,14 +1033,28 @@ final class StatusBarController: NSObject {
         menu.insertItem(separator2, at: insertIndex)
         insertIndex += 1
         
-        let quotaHeader = NSMenuItem(title: "Quota Status", action: nil, keyEquivalent: "")
-        quotaHeader.isEnabled = false
-        quotaHeader.tag = 999
-        menu.insertItem(quotaHeader, at: insertIndex)
-        insertIndex += 1
-        
-        var hasQuota = false
-        for (identifier, result) in providerResults {
+         let quotaHeader = NSMenuItem(title: "Quota Status", action: nil, keyEquivalent: "")
+         quotaHeader.isEnabled = false
+         quotaHeader.tag = 999
+         menu.insertItem(quotaHeader, at: insertIndex)
+         insertIndex += 1
+         
+         var hasQuota = false
+         
+         // Copilot Quota (always show if currentUsage exists)
+         if let copilotUsage = currentUsage {
+             hasQuota = true
+             let limit = copilotUsage.userPremiumRequestEntitlement
+             let used = copilotUsage.usedRequests
+             let remaining = limit - used
+             let percentage = limit > 0 ? (Double(remaining) / Double(limit)) * 100 : 0
+             let quotaItem = createQuotaMenuItem(identifier: .copilot, percentage: percentage)
+             quotaItem.tag = 999
+             menu.insertItem(quotaItem, at: insertIndex)
+             insertIndex += 1
+         }
+         
+         for (identifier, result) in providerResults {
             if case .quotaBased(let remaining, let entitlement, _) = result.usage {
                 hasQuota = true
                 let percentage = entitlement > 0 ? (Double(remaining) / Double(entitlement)) * 100 : 0
