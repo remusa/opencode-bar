@@ -35,10 +35,15 @@
 
   <!-- opencode:reflection:start -->
 ### Error Handling & API Fallbacks
+- **API Response Type Flexibility**: External APIs may return different types than expected
+  - Numeric Fields Can Be Strings: Fields like `balance` may come as String instead of Double/Int
+  - Optional Fields May Vary: Some providers return fields that others don't (e.g., `reset_at`, `limit_window_seconds`)
+  - Pattern: Add computed properties for type conversion (e.g., `balanceAsDouble` converts String to Double)
+  - Example Fix: Codex `balance` returned as String, added `balanceAsDouble` computed property for conversion
 - **NSNumber Type Handling**: API responses may return `NSNumber` instead of `Int` or `Double`
-  - Always check for `NSNumber` type when parsing numeric values from API responses
-  - Pattern: `value as? NSNumber` → `doubleValue`/`intValue`
-  - Example failure: Cost showing wrong value due to missing NSNumber handling
+   - Always check for `NSNumber` type when parsing numeric values from API responses
+   - Pattern: `value as? NSNumber` → `doubleValue`/`intValue`
+   - Example failure: Cost showing wrong value due to missing NSNumber handling
 - **Menu Bar App (LSUIElement) Special Requirements**:
   - UI Display: Must call `NSApp.activate(ignoringOtherApps: true)` before showing update dialogs
   - Target Assignment: Menu item targets must be explicitly set to `NSApp.delegate` (not `self`)
@@ -85,12 +90,13 @@
      - Example: `predictionPeriodMenu` changed from `private var` to `var` when `createCopilotHistorySubmenu()` moved to separate builder
      - Example: `getHistoryUIState()` changed from `private func` to `func` when accessed from external menu builders
      - Pattern: When extracting code to separate files, verify access modifiers still allow required dependencies
-    - **Process.waitUntilExit() Blocking Issue**:
-       - Synchronous Blocking: `Process.waitUntilExit()` is a blocking call even in async contexts
-       - Multi-Provider Impact: Blocking providers prevent other providers from completing fetch operations
-       - Temporary Mitigation: Disable problematic providers until proper async implementation is available
-       - Example: AntigravityProvider and OpenCodeZenProvider disabled due to blocking `ps`, `lsof`, and CLI calls
-       - Pattern: Use ProcessObservation or async Process APIs instead of `waitUntilExit()` for concurrent execution
+     - **Process.waitUntilExit() Blocking Issue**:
+        - Synchronous Blocking: `Process.waitUntilExit()` is a blocking call even in async contexts
+        - Multi-Provider Impact: Blocking providers prevent other providers from completing fetch operations
+        - Async Solution: Use `withCheckedThrowingContinuation` with `terminationHandler` and `readabilityHandler` for non-blocking process execution
+        - Example: AntigravityProvider uses `runCommandAsync()` wrapper; OpenCodeZenProvider uses `withCheckedThrowingContinuation` pattern
+        - Pattern: Replace `waitUntilExit()` with async closure-based APIs using Process.terminationHandler and Pipe.readabilityHandler
+        - Parallel Fetching Enables: Once processes are non-blocking, all providers can fetch in parallel efficiently
   - **Menu Rebuild Strategy**:
      - Tag-Based Item Removal: Use unique tags (e.g., tag 999) for dynamically generated menu items
      - Clean Rebuild Pattern: Remove all items with specific tag, then rebuild menu section from scratch
@@ -112,10 +118,32 @@
         - `.xcarchive`, `.app` bundle names in workflow files
       - Pattern: When renaming app, search all build scripts, workflows, and documentation for old name references
    - **Provider Data Ordering**:
-      - API Returns Unordered Data: Dictionary iteration order is not guaranteed in Swift
-      - Menu Display Issue: Provider items appearing in different order on each refresh cycle
-      - Root Cause: Looping over `[ProviderIdentifier: ProviderResult]` dictionary without explicit ordering
-      - Solution: Create explicit display order array or use sorted keys when iterating
-      - Example: `let providerDisplayOrder = ["open_code_zen", "gemini_cli", "claude", "open_router", "antigravity"]`
-      - Pattern: Define display order independently of data source to maintain consistent UI
-       <!-- opencode:reflection:end -->
+       - API Returns Unordered Data: Dictionary iteration order is not guaranteed in Swift
+       - Menu Display Issue: Provider items appearing in different order on each refresh cycle
+       - Root Cause: Looping over `[ProviderIdentifier: ProviderResult]` dictionary without explicit ordering
+       - Solution: Create explicit display order array or use sorted keys when iterating
+       - Example: `let providerDisplayOrder = ["open_code_zen", "gemini_cli", "claude", "open_router", "antigravity"]`
+       - Pattern: Define display order independently of data source to maintain consistent UI
+     - **Menu Item Reference Deadlock**:
+        - Shared NSMenuItem Reference: Referencing the same NSMenuItem instance (like `predictionPeriodMenu`) from multiple submenus can cause deadlocks
+        - Manifestation: Menu becomes unresponsive or hangs when clicking on submenu items
+        - Root Cause: NSMenuItem is not thread-safe when shared across different menu hierarchies
+        - Solution: Always create fresh NSMenu instances for dynamically generated submenus instead of reusing shared references
+        - Example Failure: `predictionPeriodMenu.submenu = predictionPeriodMenu` caused deadlock in history submenu
+        - Fix: Create new `let periodSubmenu = NSMenu()` and rebuild contents instead of referencing existing menu
+        - Pattern: Use constructor pattern to create independent menu objects for each submenu instance
+   - **Loading State Management in Parallel Async Operations**:
+      - Parallel Provider Fetching: All providers should fetch in parallel to minimize total fetch time
+      - Loading State Tracking: Use `Set<ProviderIdentifier>` to track providers currently fetching
+      - Pre-Fetch Menu Update: Update menu before starting fetch to show "Loading..." state
+      - Post-Fetch Menu Update: Remove loading state and replace with actual data after fetch completes
+      - Loading Item Styling: Show "Loading..." text with disabled `isEnabled = false` state
+      - Pattern: `loadingProviders.insert(identifier)` → `updateMenu()` → await fetch → `loadingProviders.remove(identifier)` → `updateMenu()`
+   - **Daily History Cache Strategy**:
+      - Hybrid Approach: Fetch fresh data for recent days (today/yesterday), serve older data from cache
+      - Timeout Risk Reduction: Reduce external CLI/API calls significantly (e.g., 7 calls → 2 calls = 71% reduction)
+      - UserDefaults Cache: Use Codable structures with JSON encoding for simple persistence
+      - Cache Validation: Check date before using cached data to avoid stale information
+      - Sequential Internal Loading: Each provider can load history day-by-day sequentially with caching making it acceptable
+      - Pattern: Load cache → fetch recent → merge → save updated cache
+         <!-- opencode:reflection:end -->
