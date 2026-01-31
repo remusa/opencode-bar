@@ -116,11 +116,23 @@ final class ClaudeProvider: ProviderProtocol {
             // Calculate remaining percentage (100 - utilization)
             let remaining = 100 - utilization
             
-            // Parse reset times using ISO8601DateFormatter
-            let dateFormatter = ISO8601DateFormatter()
+            // Parse reset times - try with fractional seconds first, then without
+            func parseISO8601Date(_ string: String) -> Date? {
+                let formatterWithFrac = ISO8601DateFormatter()
+                formatterWithFrac.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                if let date = formatterWithFrac.date(from: string) {
+                    return date
+                }
+                
+                let formatterWithoutFrac = ISO8601DateFormatter()
+                formatterWithoutFrac.formatOptions = [.withInternetDateTime]
+                return formatterWithoutFrac.date(from: string)
+            }
             
-            let fiveHourReset = response.five_hour?.resets_at.flatMap { dateFormatter.date(from: $0) }
-            let sevenDayReset = sevenDay.resets_at.flatMap { dateFormatter.date(from: $0) }
+            let fiveHourReset = response.five_hour?.resets_at.flatMap { parseISO8601Date($0) }
+            let sevenDayReset = sevenDay.resets_at.flatMap { parseISO8601Date($0) }
+            
+            logger.info("Claude reset times - 5h: \(fiveHourReset?.description ?? "nil"), 7d: \(sevenDayReset?.description ?? "nil")")
             
             // Extract utilization percentages for each window
             let fiveHourUsage = response.five_hour?.utilization

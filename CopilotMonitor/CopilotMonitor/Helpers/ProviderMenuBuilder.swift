@@ -112,7 +112,8 @@ extension StatusBarController {
                 submenu.addItem(item)
                 if let reset = details.fiveHourReset {
                     let formatter = DateFormatter()
-                    formatter.timeStyle = .short
+                    formatter.dateFormat = "yyyy-MM-dd HH:mm zzz"
+                    formatter.timeZone = TimeZone.current
                     let resetItem = NSMenuItem()
                     resetItem.view = createDisabledLabelView(text: "   Resets: \(formatter.string(from: reset))")
                     submenu.addItem(resetItem)
@@ -124,7 +125,8 @@ extension StatusBarController {
                 submenu.addItem(item)
                 if let reset = details.sevenDayReset {
                     let formatter = DateFormatter()
-                    formatter.dateFormat = "MMM d"
+                    formatter.dateFormat = "yyyy-MM-dd HH:mm zzz"
+                    formatter.timeZone = TimeZone.current
                     let resetItem = NSMenuItem()
                     resetItem.view = createDisabledLabelView(text: "   Resets: \(formatter.string(from: reset))")
                     submenu.addItem(resetItem)
