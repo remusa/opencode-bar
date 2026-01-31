@@ -510,10 +510,11 @@ extension StatusBarController {
         
         let view = NSView(frame: NSRect(x: 0, y: 0, width: menuWidth, height: itemHeight))
         
+        let indentedLeading: CGFloat = leadingOffset + 18
         let leftTextField = NSTextField(labelWithString: "Pace: \(paceInfo.statusText)")
         leftTextField.font = NSFont.systemFont(ofSize: fontSize)
         leftTextField.textColor = .disabledControlTextColor
-        leftTextField.frame = NSRect(x: leadingOffset, y: 3, width: 100, height: itemHeight - 6)
+        leftTextField.frame = NSRect(x: indentedLeading, y: 3, width: 110, height: itemHeight - 6)
         view.addSubview(leftTextField)
         
         let hasTooFast = paceInfo.status == .tooFast
