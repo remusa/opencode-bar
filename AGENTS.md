@@ -22,9 +22,9 @@
   - You can use color for text which is right-aligned text only.
 - Others
   - **Never use random spaces for separating label**
+    - BEST: "OpenRouter", Additional Label on the right with right-aligned text: "$37.42"
     - OK: "OpenRouter: $37.42"
     - OK: "OpenRouter ($37.42)"
-    - OK: "OpenRouter", Additional Label on the right: "$37.42"
     - NO: "OpenRouter    $37.42" (stupid random spaces)
 
 ### Menu Item Layout Constants (MUST follow strictly)
@@ -212,5 +212,23 @@ let rightElementX: CGFloat = menuWidth - trailingMargin - iconSize  // = 270
        - Solution: Use `NSTextField.sizeToFit()` to calculate exact text width before positioning elements
        - Layout Pattern: Position elements from right edge (using `rightElementX`) moving left to accommodate variable-width text
        - Pattern: Right-to-left layout prevents text overflow while maintaining alignment with fixed elements
-
-          <!-- opencode:reflection:end -->
+    - **Menu Bar Icon Appearance Detection**:
+       - App Appearance Mismatch: Using `NSApp.effectiveAppearance` for menu bar icon color detection causes black text in light mode
+       - Root Cause: Menu bar background can differ from app background appearance
+       - Solution: Use `self.effectiveAppearance` (view's own appearance) for NSStatusBarButton contexts
+       - Vertical Alignment: Adjust offset from `y:3` to `y:4/5` for better visual alignment with other menu bar items
+       - Pattern: Always check appearance at the view level, not the app level
+    - **Cache Timezone Consistency**:
+       - UTC vs Local Timezone Mismatch: Cache dates stored in UTC but calendar was using local timezone (KST)
+       - Comparison Failures: `isDate(..., inSameDayAs:)` comparisons failing due to timezone mismatch
+       - Consequence: Cache saved but never used during progressive loading, causing unnecessary API calls
+       - Solution: Use UTC calendar for all date comparisons to match cache storage format
+       - Pattern: `calendar.timeZone = TimeZone(abbreviation: "UTC") ?? TimeZone.current`
+    - **ISO8601 Date Parsing Flexibility**:
+       - Fractional Seconds in API: API responses may include fractional seconds (e.g., "2026-02-05T14:59:30.123456Z")
+       - Parsing Failure: Basic ISO8601DateFormatter() doesn't handle fractional seconds by default
+       - Solution: Try parsing with `.withFractionalSeconds` first, then fallback to without
+       - Pattern: Define helper function that attempts multiple format options sequentially
+       - Example: `formatterWithFrac.formatOptions = [.withInternetDateTime, .withFractionalSeconds]`
+ 
+           <!-- opencode:reflection:end -->
