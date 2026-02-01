@@ -2,12 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleDisplayName</key>
+	<string>OpenCode Bar</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.copilotmonitor.CopilotMonitor</string>
 	<key>CFBundleName</key>
 	<string>OpencodeBar</string>
-	<key>CFBundleDisplayName</key>
-	<string>OpenCode Bar</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
