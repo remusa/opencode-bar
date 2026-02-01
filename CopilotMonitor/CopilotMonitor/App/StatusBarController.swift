@@ -90,6 +90,8 @@ final class StatusBarController: NSObject {
         debugLog("setupNotificationObservers completed")
         startRefreshTimer()
         debugLog("startRefreshTimer completed")
+        checkAndPromptGitHubStar()
+        debugLog("checkAndPromptGitHubStar called")
         logger.info("Init completed")
         debugLog("Init completed")
     }
@@ -189,9 +191,9 @@ final class StatusBarController: NSObject {
         menu.addItem(NSMenuItem.separator())
 
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
-        let versionItem = NSMenuItem(title: "Version \(version)", action: nil, keyEquivalent: "")
+        let versionItem = NSMenuItem(title: "OpenCode Bar v\(version)", action: #selector(openGitHub), keyEquivalent: "")
         versionItem.image = NSImage(systemSymbolName: "info.circle", accessibilityDescription: "Version")
-        versionItem.isEnabled = false
+        versionItem.target = self
         menu.addItem(versionItem)
 
          let quitItem = NSMenuItem(title: "Quit", action: #selector(quitClicked), keyEquivalent: "q")
@@ -1245,6 +1247,117 @@ final class StatusBarController: NSObject {
 
     @objc private func openBillingClicked() {
         if let url = URL(string: "https://github.com/settings/billing/premium_requests_usage") { NSWorkspace.shared.open(url) }
+    }
+
+    @objc private func openGitHub() {
+        logger.info("Opening GitHub repository")
+        if let url = URL(string: "https://github.com/kargnas/opencode-bar") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    /// Prompts user to star GitHub repo on first launch (max 3 times).
+    /// Checks: gh CLI auth, star status, prompt count. Runs async to avoid blocking startup.
+    private func checkAndPromptGitHubStar() {
+        Task.detached { [weak self] in
+            guard let self = self else { return }
+
+            let promptCountKey = "githubStarPromptCount"
+            let promptCount = UserDefaults.standard.integer(forKey: promptCountKey)
+
+            guard promptCount < 3 else {
+                await MainActor.run { self.debugLog("GitHub star prompt: skipped (count \(promptCount))") }
+                return
+            }
+
+            let ghPaths = ["/usr/local/bin/gh", "/opt/homebrew/bin/gh", "/usr/bin/gh"]
+            guard let ghExecutable = ghPaths.first(where: { FileManager.default.fileExists(atPath: $0) }) else {
+                await MainActor.run { self.debugLog("GitHub star prompt: skipped (gh not installed)") }
+                return
+            }
+
+            let authProcess = Process()
+            authProcess.executableURL = URL(fileURLWithPath: ghExecutable)
+            authProcess.arguments = ["auth", "status"]
+            authProcess.standardOutput = FileHandle.nullDevice
+            authProcess.standardError = FileHandle.nullDevice
+
+            do {
+                try authProcess.run()
+                authProcess.waitUntilExit()
+            } catch {
+                await MainActor.run { self.debugLog("GitHub star prompt: skipped (gh auth failed)") }
+                return
+            }
+
+            guard authProcess.terminationStatus == 0 else {
+                await MainActor.run { self.debugLog("GitHub star prompt: skipped (not authenticated)") }
+                return
+            }
+
+            // gh api returns 204 if starred, 404 if not starred
+            let starCheckProcess = Process()
+            starCheckProcess.executableURL = URL(fileURLWithPath: ghExecutable)
+            starCheckProcess.arguments = ["api", "user/starred/kargnas/opencode-bar", "-i"]
+            let starCheckPipe = Pipe()
+            starCheckProcess.standardOutput = starCheckPipe
+            starCheckProcess.standardError = FileHandle.nullDevice
+
+            do {
+                try starCheckProcess.run()
+                starCheckProcess.waitUntilExit()
+            } catch {
+                await MainActor.run { self.debugLog("GitHub star prompt: skipped (star check failed)") }
+                return
+            }
+
+            if starCheckProcess.terminationStatus == 0 {
+                let output = String(data: starCheckPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+                if output.contains("204") || output.contains("HTTP/2 204") {
+                    await MainActor.run { self.debugLog("GitHub star prompt: skipped (already starred)") }
+                    return
+                }
+            }
+
+            await MainActor.run {
+                self.debugLog("GitHub star prompt: showing alert (count: \(promptCount))")
+
+                // Required for menu bar apps (LSUIElement) to show dialogs properly
+                NSApp.activate(ignoringOtherApps: true)
+
+                let alert = NSAlert()
+                alert.messageText = "Support OpenCode Bar?"
+                alert.informativeText = "If you find this app useful, would you like to star it on GitHub? It helps others discover this project."
+                alert.addButton(withTitle: "Star on GitHub")
+                alert.addButton(withTitle: "Not Now")
+                alert.alertStyle = .informational
+
+                let response = alert.runModal()
+
+                if response == .alertFirstButtonReturn {
+                    self.debugLog("GitHub star prompt: user accepted, starring repo")
+                    Task.detached { [weak self] in
+                        let starProcess = Process()
+                        starProcess.executableURL = URL(fileURLWithPath: ghExecutable)
+                        starProcess.arguments = ["repo", "star", "kargnas/opencode-bar"]
+                        starProcess.standardOutput = FileHandle.nullDevice
+                        starProcess.standardError = FileHandle.nullDevice
+
+                        do {
+                            try starProcess.run()
+                            starProcess.waitUntilExit()
+                            await MainActor.run { [weak self] in self?.debugLog("GitHub star prompt: starred successfully") }
+                        } catch {
+                            await MainActor.run { [weak self] in self?.debugLog("GitHub star prompt: failed to star") }
+                        }
+                    }
+                } else {
+                    self.debugLog("GitHub star prompt: user declined")
+                }
+
+                UserDefaults.standard.set(promptCount + 1, forKey: promptCountKey)
+            }
+        }
     }
 
     @objc private func quitClicked() {
