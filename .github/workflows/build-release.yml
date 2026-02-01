@@ -70,7 +70,7 @@ jobs:
         if: "!startsWith(github.ref, 'refs/tags/v')"
         run: |
           mkdir -p CopilotMonitor/build/export
-          cp -R CopilotMonitor/build/CopilotMonitor.xcarchive/Products/Applications/CopilotMonitor.app CopilotMonitor/build/export/
+          cp -R "CopilotMonitor/build/CopilotMonitor.xcarchive/Products/Applications/OpenCode Bar.app" CopilotMonitor/build/export/
       
       - name: Export App (Signed)
         if: startsWith(github.ref, 'refs/tags/v')
@@ -83,8 +83,8 @@ jobs:
       - name: Verify Code Signing
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          codesign --verify --deep --strict --verbose=2 "$RUNNER_TEMP/export/CopilotMonitor.app"
-          codesign -dv --verbose=4 "$RUNNER_TEMP/export/CopilotMonitor.app" 2>&1 | grep "Authority"
+          codesign --verify --deep --strict --verbose=2 "$RUNNER_TEMP/export/OpenCode Bar.app"
+          codesign -dv --verbose=4 "$RUNNER_TEMP/export/OpenCode Bar.app" 2>&1 | grep "Authority"
       
       - name: Notarize App
         if: startsWith(github.ref, 'refs/tags/v')
@@ -94,16 +94,16 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           cd "$RUNNER_TEMP/export"
-          ditto -c -k --keepParent CopilotMonitor.app CopilotMonitor.zip
+          ditto -c -k --keepParent "OpenCode Bar.app" "OpenCode Bar.zip"
           
-          xcrun notarytool submit CopilotMonitor.zip \
+          xcrun notarytool submit "OpenCode Bar.zip" \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
             --wait \
             --timeout 30m
           
-          xcrun stapler staple CopilotMonitor.app
+          xcrun stapler staple "OpenCode Bar.app"
       
       - name: Install create-dmg
         if: startsWith(github.ref, 'refs/tags/v')
@@ -113,13 +113,13 @@ jobs:
         if: "!startsWith(github.ref, 'refs/tags/v')"
         run: |
           mkdir -p dmg_temp
-          cp -R CopilotMonitor/build/export/CopilotMonitor.app dmg_temp/
+          cp -R "CopilotMonitor/build/export/OpenCode Bar.app" dmg_temp/
           ln -s /Applications dmg_temp/Applications
           
            hdiutil create -volname "OpenCode Bar" \
              -srcfolder dmg_temp \
              -ov -format UDZO \
-             OpenCodeUsageMonitor.dmg
+             OpenCode-Bar.dmg
           
           rm -rf dmg_temp
       
@@ -127,23 +127,23 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           VERSION="${GITHUB_REF#refs/tags/}"
-          DMG_NAME="OpenCodeUsageMonitor-${VERSION}.dmg"
+          DMG_NAME="OpenCode-Bar-${VERSION}.dmg"
           
           # Create clean staging directory with ONLY the app and Applications symlink
           # This prevents extra files (Packaging.log, DistributionSummary.plist, etc.) from being included
           DMG_STAGING="$RUNNER_TEMP/dmg_staging"
           mkdir -p "$DMG_STAGING"
-          cp -R "$RUNNER_TEMP/export/CopilotMonitor.app" "$DMG_STAGING/"
+          cp -R "$RUNNER_TEMP/export/OpenCode Bar.app" "$DMG_STAGING/"
           ln -s /Applications "$DMG_STAGING/Applications"
           
            create-dmg \
              --volname "OpenCode Bar" \
              --window-pos 200 120 \
-            --window-size 500 320 \
-            --icon-size 80 \
-            --icon "CopilotMonitor.app" 125 175 \
-            --app-drop-link 375 175 \
-            --hide-extension "CopilotMonitor.app" \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "OpenCode Bar.app" 150 200 \
+            --app-drop-link 450 200 \
+            --hide-extension "OpenCode Bar.app" \
             "$DMG_NAME" \
             "$DMG_STAGING" || true
           
@@ -165,7 +165,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           VERSION="${GITHUB_REF#refs/tags/}"
-          DMG_NAME="OpenCodeUsageMonitor-${VERSION}.dmg"
+          DMG_NAME="OpenCode-Bar-${VERSION}.dmg"
           
           xcrun notarytool submit "$DMG_NAME" \
             --apple-id "$APPLE_ID" \
@@ -190,7 +190,7 @@ jobs:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
           VERSION="${GITHUB_REF#refs/tags/}"
-          DMG_NAME="OpenCodeUsageMonitor-${VERSION}.dmg"
+          DMG_NAME="OpenCode-Bar-${VERSION}.dmg"
            DOWNLOAD_URL="https://github.com/kargnas/opencode-bar/releases/download/${VERSION}/${DMG_NAME}"
           
           echo "$SPARKLE_PRIVATE_KEY" > "$RUNNER_TEMP/sparkle_key"
@@ -232,16 +232,16 @@ jobs:
         if: "!startsWith(github.ref, 'refs/tags/v')"
         uses: actions/upload-artifact@v4
         with:
-          name: OpenCodeUsageMonitor
-          path: OpenCodeUsageMonitor.dmg
+          name: OpenCode-Bar
+          path: OpenCode-Bar.dmg
       
       - name: Upload Artifact (Release Build)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@v4
         with:
-          name: OpenCodeUsageMonitor-Release
+          name: OpenCode-Bar-Release
           path: |
-            OpenCodeUsageMonitor-*.dmg
+            OpenCode-Bar-*.dmg
             appcast.xml
 
   release:
@@ -256,7 +256,7 @@ jobs:
       - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
-          name: OpenCodeUsageMonitor-Release
+          name: OpenCode-Bar-Release
       
       - name: Get Version
         id: version
@@ -269,7 +269,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            OpenCodeUsageMonitor-${{ steps.version.outputs.version }}.dmg
+            OpenCode-Bar-${{ steps.version.outputs.version }}.dmg
             appcast.xml
           generate_release_notes: true
         env:
