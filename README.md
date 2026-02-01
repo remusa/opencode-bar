@@ -10,11 +10,11 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/kargnas/copilot-usage-monitor/releases/latest">
-    <img src="https://img.shields.io/github/v/release/kargnas/copilot-usage-monitor?style=flat-square" alt="Release">
+  <a href="https://github.com/kargnas/opencode-bar/releases/latest">
+    <img src="https://img.shields.io/github/v/release/kargnas/opencode-bar?style=flat-square" alt="Release">
   </a>
-  <a href="https://github.com/kargnas/copilot-usage-monitor/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/kargnas/copilot-usage-monitor?style=flat-square" alt="License">
+  <a href="https://github.com/kargnas/opencode-bar/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/kargnas/opencode-bar?style=flat-square" alt="License">
   </a>
   <img src="https://img.shields.io/badge/platform-macOS%2013%2B-blue?style=flat-square" alt="Platform">
   <img src="https://img.shields.io/badge/swift-5.9-orange?style=flat-square" alt="Swift">
@@ -65,7 +65,7 @@
 
 ### Download (Recommended)
 
-Download the latest `.dmg` file from the [**Releases**](https://github.com/kargnas/copilot-usage-monitor/releases/latest) page.
+Download the latest `.dmg` file from the [**Releases**](https://github.com/kargnas/opencode-bar/releases/latest) page.
 
 > **Note**: If you see a "App is damaged" error, run this command in Terminal:
 > ```bash
@@ -76,8 +76,8 @@ Download the latest `.dmg` file from the [**Releases**](https://github.com/kargn
 
 ```bash
 # Clone the repository
-git clone https://github.com/kargnas/copilot-usage-monitor.git
-cd copilot-usage-monitor
+git clone https://github.com/kargnas/opencode-bar.git
+cd opencode-bar
 
 # Build and run
 xcodebuild -project CopilotMonitor/CopilotMonitor.xcodeproj \
