@@ -40,7 +40,7 @@
         {
             "label": "▶️ Run CopilotMonitor",
             "type": "shell",
-            "command": "open ~/Library/Developer/Xcode/DerivedData/CopilotMonitor-*/Build/Products/Debug/CopilotMonitor.app",
+            "command": "open ~/Library/Developer/Xcode/DerivedData/CopilotMonitor-*/Build/Products/Debug/*.app",
             "presentation": {
                 "reveal": "silent",
                 "close": true

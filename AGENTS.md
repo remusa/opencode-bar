@@ -63,6 +63,26 @@ let rightElementX: CGFloat = menuWidth - trailingMargin - iconSize  // = 270
 - When creating custom views, reference these constants to ensure alignment matches standard menu items
 - **MUST** update this section if you need to define new custom spacing, margin, dimensions rules.
 
+### Build & Run Commands
+```bash
+# Build
+xcodebuild -project CopilotMonitor/CopilotMonitor.xcodeproj \
+  -scheme CopilotMonitor -configuration Debug build
+
+# Run (after build)
+open ~/Library/Developer/Xcode/DerivedData/CopilotMonitor-*/Build/Products/Debug/*.app
+
+# Kill + Build + Run (one-liner)
+pkill -x CopilotMonitor 2>/dev/null; \
+xcodebuild -project CopilotMonitor/CopilotMonitor.xcodeproj \
+  -scheme CopilotMonitor -configuration Debug build && \
+open ~/Library/Developer/Xcode/DerivedData/CopilotMonitor-*/Build/Products/Debug/*.app
+
+# Watch logs
+log stream --predicate 'subsystem == "com.opencodeproviders"' --level debug
+# or check file: cat /tmp/provider_debug.log
+```
+
 ### Instruction of each task
 - In all changes, always write debugging log for actually printing before you confirming the feature is fully functional.
 - After each change, follow:
