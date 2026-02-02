@@ -76,9 +76,12 @@ final class ChutesProvider: ProviderProtocol {
         let quota = quotaItem.quota
         let used = usage.used
         let remaining = max(0, quota - used)
-        let remainingPercentage = Int((Double(remaining) / Double(quota)) * 100)
+        let usedPercentage = Int((Double(used) / Double(quota)) * 100)
+        let remainingPercentage = 100 - usedPercentage
 
-        logger.info("Chutes usage fetched: \(used)/\(quota) used, \(remaining) remaining (\(remainingPercentage)%)")
+        let planTier = Self.getPlanTier(from: quota)
+
+        logger.info("Chutes usage fetched: \(used)/\(quota) used (\(usedPercentage)%), tier: \(planTier)")
 
         let providerUsage = ProviderUsage.quotaBased(
             remaining: remainingPercentage,
@@ -86,7 +89,6 @@ final class ChutesProvider: ProviderProtocol {
             overagePermitted: false
         )
 
-        // Parse payment refresh date if available
         let resetPeriod: String
         if let paymentDate = quotaItem.paymentRefreshDate,
            let date = Self.parseISO8601Date(paymentDate) {
@@ -100,7 +102,7 @@ final class ChutesProvider: ProviderProtocol {
             limit: Double(quota),
             limitRemaining: Double(remaining),
             resetPeriod: resetPeriod,
-            planType: "\(quota)/day",
+            planType: planTier,
             authSource: tokenManager.lastFoundAuthPath?.path ?? "~/.local/share/opencode/auth.json"
         )
 
@@ -175,7 +177,19 @@ final class ChutesProvider: ProviderProtocol {
         }
     }
 
-    /// Parses ISO8601 date string
+    private static func getPlanTier(from quota: Int) -> String {
+        switch quota {
+        case 300:
+            return "Free"
+        case 2000:
+            return "Pro"
+        case 5000:
+            return "Enterprise"
+        default:
+            return "\(quota)/day"
+        }
+    }
+
     private static func parseISO8601Date(_ string: String) -> Date? {
         let formatterWithFrac = ISO8601DateFormatter()
         formatterWithFrac.formatOptions = [.withInternetDateTime, .withFractionalSeconds]

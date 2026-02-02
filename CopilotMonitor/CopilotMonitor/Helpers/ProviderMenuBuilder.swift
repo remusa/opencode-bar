@@ -442,15 +442,13 @@ extension StatusBarController {
 
         case .chutes:
             if let daily = details.dailyUsage,
-               let limit = details.limit,
-               let limitRemaining = details.limitRemaining {
+               let limit = details.limit {
                 let used = Int(daily)
                 let total = Int(limit)
-                let remaining = Int(limitRemaining)
                 let percentage = total > 0 ? Int((Double(used) / Double(total)) * 100) : 0
 
                 let item = NSMenuItem()
-                item.view = createDisabledLabelView(text: String(format: "Daily: %d/%d (%d%%)", used, total, percentage))
+                item.view = createDisabledLabelView(text: String(format: "Primary: %d%%", percentage))
                 submenu.addItem(item)
 
                 if let resetPeriod = details.resetPeriod {
@@ -460,10 +458,17 @@ extension StatusBarController {
                 }
             }
 
+            submenu.addItem(NSMenuItem.separator())
+
             if let plan = details.planType {
-                submenu.addItem(NSMenuItem.separator())
                 let item = NSMenuItem()
-                item.view = createDisabledLabelView(text: "Tier: \(plan)")
+                item.view = createDisabledLabelView(text: "Plan: \(plan)")
+                submenu.addItem(item)
+            }
+
+            if let credits = details.creditsBalance {
+                let item = NSMenuItem()
+                item.view = createDisabledLabelView(text: String(format: "Credits: $%.2f", credits))
                 submenu.addItem(item)
             }
 
