@@ -120,6 +120,7 @@ final class GeminiCLIProvider: ProviderProtocol {
         }
 
         var modelBreakdown: [String: Double] = [:]
+        var modelResetTimes: [String: Date] = [:]
         var minFraction = 1.0
         var earliestReset: Date?
 
@@ -135,6 +136,7 @@ final class GeminiCLIProvider: ProviderProtocol {
 
             if let resetDate = iso8601Formatter.date(from: bucket.resetTime)
                 ?? iso8601FormatterNoFrac.date(from: bucket.resetTime) {
+                modelResetTimes[bucket.modelId] = resetDate
                 if let current = earliestReset {
                     earliestReset = min(current, resetDate)
                 } else {
@@ -153,7 +155,8 @@ final class GeminiCLIProvider: ProviderProtocol {
             remainingPercentage: remainingPercentage,
             modelBreakdown: modelBreakdown,
             authSource: "~/.config/opencode/antigravity-accounts.json",
-            earliestReset: earliestReset
+            earliestReset: earliestReset,
+            modelResetTimes: modelResetTimes
         )
     }
 }

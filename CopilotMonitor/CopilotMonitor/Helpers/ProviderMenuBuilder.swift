@@ -189,24 +189,40 @@ extension StatusBarController {
 
         case .codex:
             if let primary = details.dailyUsage {
-                var primaryTitle = String(format: "Primary: %.0f%%", primary)
-                if let reset = details.primaryReset {
-                    let hours = Int(reset.timeIntervalSinceNow / 3600)
-                    primaryTitle += " (\(hours)h)"
-                }
                 let item = NSMenuItem()
-                item.view = createDisabledLabelView(text: primaryTitle)
+                item.view = createDisabledLabelView(text: String(format: "Primary: %.0f%%", primary))
                 submenu.addItem(item)
+                if let reset = details.primaryReset {
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "yyyy-MM-dd HH:mm zzz"
+                    formatter.timeZone = TimeZone.current
+                    let resetItem = NSMenuItem()
+                    resetItem.view = createDisabledLabelView(text: "Resets: \(formatter.string(from: reset))", indent: 18)
+                    submenu.addItem(resetItem)
+
+                    let paceInfo = calculatePace(usage: primary, resetTime: reset, windowHours: 24)
+                    let paceItem = NSMenuItem()
+                    paceItem.view = createPaceView(paceInfo: paceInfo)
+                    submenu.addItem(paceItem)
+                }
             }
             if let secondary = details.secondaryUsage {
-                var secondaryTitle = String(format: "Secondary: %.0f%%", secondary)
-                if let reset = details.secondaryReset {
-                    let hours = Int(reset.timeIntervalSinceNow / 3600)
-                    secondaryTitle += " (\(hours)h)"
-                }
                 let item = NSMenuItem()
-                item.view = createDisabledLabelView(text: secondaryTitle)
+                item.view = createDisabledLabelView(text: String(format: "Secondary: %.0f%%", secondary))
                 submenu.addItem(item)
+                if let reset = details.secondaryReset {
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "yyyy-MM-dd HH:mm zzz"
+                    formatter.timeZone = TimeZone.current
+                    let resetItem = NSMenuItem()
+                    resetItem.view = createDisabledLabelView(text: "Resets: \(formatter.string(from: reset))", indent: 18)
+                    submenu.addItem(resetItem)
+
+                    let paceInfo = calculatePace(usage: secondary, resetTime: reset, windowHours: 24)
+                    let paceItem = NSMenuItem()
+                    paceItem.view = createPaceView(paceInfo: paceInfo)
+                    submenu.addItem(paceItem)
+                }
             }
             submenu.addItem(NSMenuItem.separator())
             if let plan = details.planType {
@@ -329,6 +345,11 @@ extension StatusBarController {
                     let resetItem = NSMenuItem()
                     resetItem.view = createDisabledLabelView(text: "Resets: \(formatter.string(from: reset))", indent: 18)
                     submenu.addItem(resetItem)
+
+                    let paceInfo = calculatePace(usage: tokenUsage, resetTime: reset, windowHours: 5)
+                    let paceItem = NSMenuItem()
+                    paceItem.view = createPaceView(paceInfo: paceInfo)
+                    submenu.addItem(paceItem)
                 }
             }
 
@@ -352,6 +373,11 @@ extension StatusBarController {
                     let resetItem = NSMenuItem()
                     resetItem.view = createDisabledLabelView(text: "Resets: \(formatter.string(from: reset))", indent: 18)
                     submenu.addItem(resetItem)
+
+                    let paceInfo = calculateMonthlyPace(usagePercent: mcpUsage, resetDate: reset)
+                    let paceItem = NSMenuItem()
+                    paceItem.view = createPaceView(paceInfo: paceInfo)
+                    submenu.addItem(paceItem)
                 }
             }
 
@@ -489,23 +515,26 @@ extension StatusBarController {
     func createGeminiAccountSubmenu(_ account: GeminiAccountQuota) -> NSMenu {
         let submenu = NSMenu()
 
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm zzz"
+        formatter.timeZone = TimeZone.current
+
         for (model, quota) in account.modelBreakdown.sorted(by: { $0.key < $1.key }) {
             let item = NSMenuItem()
             item.view = createDisabledLabelView(text: String(format: "%@: %.0f%%", model, quota))
             submenu.addItem(item)
-        }
 
-        if let reset = account.earliestReset {
-            submenu.addItem(NSMenuItem.separator())
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd HH:mm zzz"
-            formatter.timeZone = TimeZone.current
-            let resetItem = NSMenuItem()
-            resetItem.view = createDisabledLabelView(
-                text: "Resets: \(formatter.string(from: reset))",
-                icon: NSImage(systemSymbolName: "clock.arrow.circlepath", accessibilityDescription: "Reset Time")
-            )
-            submenu.addItem(resetItem)
+            if let resetDate = account.modelResetTimes[model] {
+                let resetItem = NSMenuItem()
+                resetItem.view = createDisabledLabelView(text: "Resets: \(formatter.string(from: resetDate))", indent: 18)
+                submenu.addItem(resetItem)
+
+                let usagePercent = 100 - quota
+                let paceInfo = calculatePace(usage: usagePercent, resetTime: resetDate, windowHours: 24)
+                let paceItem = NSMenuItem()
+                paceItem.view = createPaceView(paceInfo: paceInfo)
+                submenu.addItem(paceItem)
+            }
         }
 
         submenu.addItem(NSMenuItem.separator())

@@ -13,6 +13,8 @@ struct GeminiAccountQuota: Codable {
     let authSource: String
     /// Earliest reset time among all model quotas for this account
     let earliestReset: Date?
+    /// Reset time for each model (key: modelId, value: reset date)
+    let modelResetTimes: [String: Date]
 }
 
 struct DetailedUsage {
