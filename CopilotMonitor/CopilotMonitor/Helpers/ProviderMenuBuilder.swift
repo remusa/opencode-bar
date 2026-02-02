@@ -495,6 +495,19 @@ extension StatusBarController {
             submenu.addItem(item)
         }
 
+        if let reset = account.earliestReset {
+            submenu.addItem(NSMenuItem.separator())
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd HH:mm zzz"
+            formatter.timeZone = TimeZone.current
+            let resetItem = NSMenuItem()
+            resetItem.view = createDisabledLabelView(
+                text: "Resets: \(formatter.string(from: reset))",
+                icon: NSImage(systemSymbolName: "clock.arrow.circlepath", accessibilityDescription: "Reset Time")
+            )
+            submenu.addItem(resetItem)
+        }
+
         submenu.addItem(NSMenuItem.separator())
 
         let emailItem = NSMenuItem()

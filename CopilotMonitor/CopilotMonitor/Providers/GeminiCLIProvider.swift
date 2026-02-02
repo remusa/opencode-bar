@@ -121,23 +121,39 @@ final class GeminiCLIProvider: ProviderProtocol {
 
         var modelBreakdown: [String: Double] = [:]
         var minFraction = 1.0
+        var earliestReset: Date?
+
+        let iso8601Formatter = ISO8601DateFormatter()
+        iso8601Formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let iso8601FormatterNoFrac = ISO8601DateFormatter()
+        iso8601FormatterNoFrac.formatOptions = [.withInternetDateTime]
 
         for bucket in quotaResponse.buckets {
             let percentage = bucket.remainingFraction * 100.0
             modelBreakdown[bucket.modelId] = percentage
             minFraction = min(minFraction, bucket.remainingFraction)
+
+            if let resetDate = iso8601Formatter.date(from: bucket.resetTime)
+                ?? iso8601FormatterNoFrac.date(from: bucket.resetTime) {
+                if let current = earliestReset {
+                    earliestReset = min(current, resetDate)
+                } else {
+                    earliestReset = resetDate
+                }
+            }
         }
 
         let remainingPercentage = minFraction * 100.0
 
-        logger.info("Gemini CLI account #\(accountIndex + 1) (\(email)): \(remainingPercentage)% remaining")
+        logger.info("Gemini CLI account #\(accountIndex + 1) (\(email)): \(remainingPercentage)% remaining, resets: \(earliestReset?.description ?? "unknown")")
 
         return GeminiAccountQuota(
             accountIndex: accountIndex,
             email: email,
             remainingPercentage: remainingPercentage,
             modelBreakdown: modelBreakdown,
-            authSource: "~/.config/opencode/antigravity-accounts.json"
+            authSource: "~/.config/opencode/antigravity-accounts.json",
+            earliestReset: earliestReset
         )
     }
 }

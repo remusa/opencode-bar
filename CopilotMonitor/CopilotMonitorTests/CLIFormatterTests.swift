@@ -73,12 +73,14 @@ final class CLIFormatterTests: XCTestCase {
     // MARK: - GeminiAccountQuota Tests
     
     func testGeminiAccountQuotaCreation() {
+        let resetDate = ISO8601DateFormatter().date(from: "2026-01-30T17:05:02Z")
         let account = GeminiAccountQuota(
             accountIndex: 0,
             email: "test@example.com",
             remainingPercentage: 85.0,
             modelBreakdown: ["gemini-2.5-pro": 80.0, "gemini-2.5-flash": 90.0],
-            authSource: "~/.config/opencode/antigravity-accounts.json"
+            authSource: "~/.config/opencode/antigravity-accounts.json",
+            earliestReset: resetDate
         )
         
         XCTAssertEqual(account.accountIndex, 0)
@@ -86,15 +88,18 @@ final class CLIFormatterTests: XCTestCase {
         XCTAssertEqual(account.remainingPercentage, 85.0)
         XCTAssertEqual(account.modelBreakdown["gemini-2.5-pro"], 80.0)
         XCTAssertEqual(account.modelBreakdown["gemini-2.5-flash"], 90.0)
+        XCTAssertEqual(account.earliestReset, resetDate)
     }
     
     func testGeminiAccountQuotaCodable() throws {
+        let resetDate = ISO8601DateFormatter().date(from: "2026-01-30T17:05:02Z")
         let original = GeminiAccountQuota(
             accountIndex: 1,
             email: "user@company.com",
             remainingPercentage: 100.0,
             modelBreakdown: ["gemini-2.5-pro": 100.0],
-            authSource: "test"
+            authSource: "test",
+            earliestReset: resetDate
         )
         
         let encoder = JSONEncoder()
@@ -107,14 +112,15 @@ final class CLIFormatterTests: XCTestCase {
         XCTAssertEqual(decoded.email, original.email)
         XCTAssertEqual(decoded.remainingPercentage, original.remainingPercentage)
         XCTAssertEqual(decoded.modelBreakdown, original.modelBreakdown)
+        XCTAssertEqual(decoded.earliestReset, original.earliestReset)
     }
     
     // MARK: - DetailedUsage with GeminiAccounts Tests
     
     func testDetailedUsageWithGeminiAccounts() {
         let accounts = [
-            GeminiAccountQuota(accountIndex: 0, email: "a@test.com", remainingPercentage: 100, modelBreakdown: [:], authSource: "test"),
-            GeminiAccountQuota(accountIndex: 1, email: "b@test.com", remainingPercentage: 50, modelBreakdown: [:], authSource: "test")
+            GeminiAccountQuota(accountIndex: 0, email: "a@test.com", remainingPercentage: 100, modelBreakdown: [:], authSource: "test", earliestReset: nil),
+            GeminiAccountQuota(accountIndex: 1, email: "b@test.com", remainingPercentage: 50, modelBreakdown: [:], authSource: "test", earliestReset: nil)
         ]
         
         let details = DetailedUsage(geminiAccounts: accounts)
@@ -155,8 +161,8 @@ final class CLIFormatterTests: XCTestCase {
     
     func testProviderResultWithGeminiDetails() {
         let accounts = [
-            GeminiAccountQuota(accountIndex: 0, email: "user1@gmail.com", remainingPercentage: 100, modelBreakdown: [:], authSource: "test"),
-            GeminiAccountQuota(accountIndex: 1, email: "user2@company.com", remainingPercentage: 85, modelBreakdown: [:], authSource: "test")
+            GeminiAccountQuota(accountIndex: 0, email: "user1@gmail.com", remainingPercentage: 100, modelBreakdown: [:], authSource: "test", earliestReset: nil),
+            GeminiAccountQuota(accountIndex: 1, email: "user2@company.com", remainingPercentage: 85, modelBreakdown: [:], authSource: "test", earliestReset: nil)
         ]
         let details = DetailedUsage(geminiAccounts: accounts)
         let usage = ProviderUsage.quotaBased(remaining: 85, entitlement: 100, overagePermitted: false)

@@ -11,6 +11,8 @@ struct GeminiAccountQuota: Codable {
     let remainingPercentage: Double
     let modelBreakdown: [String: Double]
     let authSource: String
+    /// Earliest reset time among all model quotas for this account
+    let earliestReset: Date?
 }
 
 struct DetailedUsage {
