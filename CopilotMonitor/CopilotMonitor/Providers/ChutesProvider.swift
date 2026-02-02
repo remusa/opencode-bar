@@ -165,7 +165,7 @@ final class ChutesProvider: ProviderProtocol {
 
     /// Fetches usage from /users/me/quota_usage/*
     private func fetchQuotaUsage(apiKey: String) async throws -> ChutesQuotaUsage {
-        guard let url = URL(string: "https://api.chutes.ai/users/me/quota_usage/*") else {
+        guard let url = URL(string: "https://api.chutes.ai/users/me/quota_usage/A") else {
             throw ProviderError.networkError("Invalid quota_usage URL")
         }
 
