@@ -1,7 +1,7 @@
 # OpenCode Bar
 
 <p align="center">
-  <img src="docs/screenshot2.png" alt="OpenCode Bar Screenshot" width="40%">
+  <img src="docs/screenshot-subscription.png" alt="OpenCode Bar Screenshot" width="40%">
   <img src="docs/screenshot3.png" alt="OpenCode Bar Screenshot" width="40%">
 </p>
 
