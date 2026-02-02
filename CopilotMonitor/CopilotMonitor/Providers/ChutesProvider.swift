@@ -120,8 +120,8 @@ final class ChutesProvider: ProviderProtocol {
             limit: Double(quota),
             limitRemaining: Double(remaining),
             resetPeriod: resetPeriod,
-            planType: planTier,
             creditsBalance: userProfile.balance,
+            planType: planTier,
             authSource: tokenManager.lastFoundAuthPath?.path ?? "~/.local/share/opencode/auth.json"
         )
 

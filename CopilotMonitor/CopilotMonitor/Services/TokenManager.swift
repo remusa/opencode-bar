@@ -48,7 +48,8 @@ struct OpenCodeAuth: Codable {
         openrouter: APIKey?,
         opencode: APIKey?,
         kimiForCoding: APIKey?,
-        zaiCodingPlan: APIKey?
+        zaiCodingPlan: APIKey?,
+        chutes: APIKey? = nil
     ) {
         self.anthropic = anthropic
         self.openai = openai
@@ -57,6 +58,7 @@ struct OpenCodeAuth: Codable {
         self.opencode = opencode
         self.kimiForCoding = kimiForCoding
         self.zaiCodingPlan = zaiCodingPlan
+        self.chutes = chutes
     }
 
     init(from decoder: Decoder) throws {
@@ -68,6 +70,7 @@ struct OpenCodeAuth: Codable {
         opencode = try container.decodeIfPresent(APIKey.self, forKey: .opencode)
         kimiForCoding = try container.decodeIfPresent(APIKey.self, forKey: .kimiForCoding)
         zaiCodingPlan = try container.decodeIfPresent(APIKey.self, forKey: .zaiCodingPlan)
+        chutes = try container.decodeIfPresent(APIKey.self, forKey: .chutes)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -79,6 +82,7 @@ struct OpenCodeAuth: Codable {
         try container.encodeIfPresent(opencode, forKey: .opencode)
         try container.encodeIfPresent(kimiForCoding, forKey: .kimiForCoding)
         try container.encodeIfPresent(zaiCodingPlan, forKey: .zaiCodingPlan)
+        try container.encodeIfPresent(chutes, forKey: .chutes)
     }
 }
 
