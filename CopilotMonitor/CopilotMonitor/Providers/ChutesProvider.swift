@@ -233,9 +233,9 @@ final class ChutesProvider: ProviderProtocol {
         case 300:
             return "Base"
         case 2000:
-            return "Pro"
+            return "Plus"
         case 5000:
-            return "Enterprise"
+            return "Pro"
         default:
             return "\(quota)/day"
         }
