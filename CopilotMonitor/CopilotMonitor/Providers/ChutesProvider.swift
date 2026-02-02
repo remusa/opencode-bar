@@ -91,29 +91,17 @@ final class ChutesProvider: ProviderProtocol {
             let decoder = JSONDecoder()
             let quotaResponse = try decoder.decode(ChutesQuotaResponse.self, from: data)
 
-            // Extract quota information
             let quota = quotaResponse.quota ?? 0
             let used = quotaResponse.used ?? 0
             let remaining = quotaResponse.remaining ?? max(0, quota - used)
 
-            // Determine entitlement (total quota)
-            let entitlement: Int
-            if quota > 0 {
-                entitlement = quota
-            } else if let tier = quotaResponse.tier,
-                      let tierQuota = Self.parseTierToQuota(tier) {
-                entitlement = tierQuota
-            } else {
-                // Fallback: infer from remaining + used or default to highest tier
-                entitlement = max(remaining + used, Self.quotaTiers.last ?? 5000)
+            guard quota > 0 else {
+                logger.error("Chutes API returned invalid quota: \(quota)")
+                throw ProviderError.decodingError("Invalid quota value from API")
             }
 
-            // Calculate remaining percentage
-            let remainingPercentage = entitlement > 0
-                ? Int((Double(remaining) / Double(entitlement)) * 100)
-                : 0
+            let remainingPercentage = Int((Double(remaining) / Double(quota)) * 100)
 
-            // Parse reset time - defaults to next 00:00 UTC if not provided
             let resetDate: Date
             if let resetAtString = quotaResponse.resetAt {
                 resetDate = Self.parseResetTime(resetAtString) ?? Self.calculateNextUTCReset()
@@ -121,7 +109,7 @@ final class ChutesProvider: ProviderProtocol {
                 resetDate = Self.calculateNextUTCReset()
             }
 
-            logger.info("Chutes usage fetched: \(used)/\(entitlement) used, \(remainingPercentage)% remaining")
+            logger.info("Chutes usage fetched: \(used)/\(quota) used, \(remaining) remaining (\(remainingPercentage)%)")
 
             let usage = ProviderUsage.quotaBased(
                 remaining: remainingPercentage,
@@ -131,10 +119,10 @@ final class ChutesProvider: ProviderProtocol {
 
             let details = DetailedUsage(
                 dailyUsage: Double(used),
-                limit: Double(entitlement),
+                limit: Double(quota),
                 limitRemaining: Double(remaining),
                 resetPeriod: Self.formatResetTime(resetDate),
-                planType: quotaResponse.tier,
+                planType: quotaResponse.tier ?? "\(quota)/day",
                 authSource: tokenManager.lastFoundAuthPath?.path ?? "~/.local/share/opencode/auth.json"
             )
 
