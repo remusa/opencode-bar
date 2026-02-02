@@ -231,7 +231,7 @@ final class ChutesProvider: ProviderProtocol {
     private static func getPlanTier(from quota: Int) -> String {
         switch quota {
         case 300:
-            return "Free"
+            return "Base"
         case 2000:
             return "Pro"
         case 5000:
