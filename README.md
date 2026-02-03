@@ -26,6 +26,24 @@
 
 **OpenCode Bar** automatically detects and monitors all AI providers registered in your [OpenCode](https://opencode.ai) configuration. No manual setup required - just install and see your usage across all providers in one unified dashboard.
 
+## Installation
+
+### Homebrew (Easy)
+
+```bash
+brew tap opgginc/opencode-bar
+brew install --cask opencode-bar
+```
+
+### Download
+
+Download the latest `.dmg` file from the [**Releases**](https://github.com/opgginc/opencode-bar/releases/latest) page.
+
+> **Note**: If you see a "App is damaged" error, run this command in Terminal:
+> ```bash
+> xattr -cr "/Applications/OpenCode Bar.app"
+> ```
+
 ### Supported Providers (Auto-detected from OpenCode)
 
 | Provider | Type | Key Metrics | Additional Details |
@@ -80,23 +98,7 @@
   - **Codex for Mac** - Auto-detected through `~/.codex/auth.json`
   - **Codex CLI** - Auto-detected through `~/.codex/auth.json`
 
-## Installation
-
-### Homebrew (Recommended)
-
-```bash
-brew tap opgginc/opencode-bar
-brew install --cask opencode-bar
-```
-
-### Download
-
-Download the latest `.dmg` file from the [**Releases**](https://github.com/opgginc/opencode-bar/releases/latest) page.
-
-> **Note**: If you see a "App is damaged" error, run this command in Terminal:
-> ```bash
-> xattr -cr "/Applications/OpenCode Bar.app"
-> ```
+## Development
 
 ### Build from Source
 
