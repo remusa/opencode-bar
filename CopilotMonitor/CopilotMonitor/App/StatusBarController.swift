@@ -804,7 +804,11 @@ final class StatusBarController: NSObject {
                         displayName += " (No usage data)"
                     }
                     let usedPercent = account.usage.usagePercentage
-                    let quotaItem = createNativeQuotaMenuItem(name: displayName, usedPercent: usedPercent, icon: iconForProvider(.copilot))
+                    let quotaItem = createNativeQuotaMenuItem(
+                        name: displayName,
+                        usedPercent: usedPercent,
+                        icon: iconForProvider(.copilot)
+                    )
                     quotaItem.tag = 999
 
                     if let details = account.details, details.hasAnyValue {
@@ -820,154 +824,235 @@ final class StatusBarController: NSObject {
                 let used = copilotUsage.usedRequests
                 let usedPercent = limit > 0 ? (Double(used) / Double(limit)) * 100 : 0
 
-                let quotaItem = createNativeQuotaMenuItem(name: ProviderIdentifier.copilot.displayName, usedPercent: usedPercent, icon: iconForProvider(.copilot))
+                let quotaItem = createNativeQuotaMenuItem(
+                    name: ProviderIdentifier.copilot.displayName,
+                    usedPercent: usedPercent,
+                    icon: iconForProvider(.copilot)
+                )
                 quotaItem.tag = 999
 
                 if let details = providerResults[.copilot]?.details, details.hasAnyValue {
                     quotaItem.submenu = createDetailSubmenu(details, identifier: .copilot)
+                } else {
+                    let submenu = NSMenu()
+                    let filledBlocks = Int((Double(used) / Double(max(limit, 1))) * 10)
+                    let emptyBlocks = 10 - filledBlocks
+                    let progressBar = String(repeating: "═", count: filledBlocks) + String(repeating: "░", count: emptyBlocks)
+                    let progressItem = NSMenuItem()
+                    progressItem.view = createDisabledLabelView(text: "[\(progressBar)] \(used)/\(limit)")
+                    submenu.addItem(progressItem)
+
+                    let usagePercent = limit > 0 ? (Double(used) / Double(limit)) * 100 : 0
+                    let usedItem = NSMenuItem()
+                    usedItem.view = createDisabledLabelView(text: String(format: "Monthly Usage: %.0f%%", usagePercent))
+                    submenu.addItem(usedItem)
+
+                    if let resetDate = copilotUsage.quotaResetDateUTC {
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+                        formatter.timeZone = TimeZone(identifier: "UTC") ?? TimeZone(secondsFromGMT: 0)!
+                        let resetItem = NSMenuItem()
+                        resetItem.view = createDisabledLabelView(text: "Resets: \(formatter.string(from: resetDate)) UTC", indent: 18)
+                        submenu.addItem(resetItem)
+
+                        let paceInfo = calculateMonthlyPace(usagePercent: usagePercent, resetDate: resetDate)
+                        let paceItem = NSMenuItem()
+                        paceItem.view = createPaceView(paceInfo: paceInfo)
+                        submenu.addItem(paceItem)
+                    }
+
+                    submenu.addItem(NSMenuItem.separator())
+
+                    if let planName = copilotUsage.planDisplayName {
+                        let planItem = NSMenuItem()
+                        planItem.view = createDisabledLabelView(
+                            text: "Plan: \(planName)",
+                            icon: NSImage(systemSymbolName: "crown", accessibilityDescription: "Plan")
+                        )
+                        submenu.addItem(planItem)
+                    }
+
+                    let freeItem = NSMenuItem()
+                    freeItem.view = createDisabledLabelView(text: "Quota Limit: \(limit)")
+                    submenu.addItem(freeItem)
+
+                    submenu.addItem(NSMenuItem.separator())
+
+                    if let email = providerResults[.copilot]?.details?.email {
+                        let emailItem = NSMenuItem()
+                        emailItem.view = createDisabledLabelView(
+                            text: "Email: \(email)",
+                            icon: NSImage(systemSymbolName: "person.circle", accessibilityDescription: "User Email"),
+                            multiline: false
+                        )
+                        submenu.addItem(emailItem)
+                    }
+
+                    let authItem = NSMenuItem()
+                    authItem.view = createDisabledLabelView(
+                        text: "Token From: Browser Cookies (Chrome/Brave/Arc/Edge)",
+                        icon: NSImage(systemSymbolName: "key", accessibilityDescription: "Auth Source"),
+                        multiline: true
+                    )
+                    submenu.addItem(authItem)
+
+                    addSubscriptionItems(to: submenu, provider: .copilot)
+
+                    quotaItem.submenu = submenu
                 }
 
                 menu.insertItem(quotaItem, at: insertIndex)
                 insertIndex += 1
             }
 
-            let quotaOrder: [ProviderIdentifier] = [.claude, .kimi, .codex, .zaiCodingPlan, .antigravity, .chutes]
-            for identifier in quotaOrder {
-                guard isProviderEnabled(identifier) else { continue }
+        let quotaOrder: [ProviderIdentifier] = [
+            .claude,
+            .kimi,
+            .codex,
+            .zaiCodingPlan,
+            .antigravity,
+            .chutes,
+            .synthetic
+        ]
+        for identifier in quotaOrder {
+            guard isProviderEnabled(identifier) else { continue }
 
-                 if let result = providerResults[identifier] {
-                     if let accounts = result.accounts, !accounts.isEmpty {
-                          let authLabels = Set(
-                              accounts.map { account in
-                                  authSourceLabel(for: account.details?.authSource, provider: identifier) ?? "Unknown"
-                              }
-                          )
-                          let showAuthLabel = authLabels.count > 1
-                          let baseName = multiAccountBaseName(for: identifier)
-                          for account in accounts {
-                              hasQuota = true
-                              var displayName = accounts.count > 1 ? "\(baseName) #\(account.accountIndex + 1)" : baseName
-                              if accounts.count > 1, showAuthLabel {
-                                  let sourceLabel = authSourceLabel(for: account.details?.authSource, provider: identifier) ?? "Unknown"
-                                  displayName += " (\(sourceLabel))"
-                              }
-                              if (account.usage.totalEntitlement ?? 0) == 0 {
-                                  displayName += " (No usage data)"
-                              }
-                              
-                              // Build percentage array for display
-                              // Claude/Kimi: show both 5h and 7d usage windows
-                              // Codex: show both primary (5h) and secondary (weekly) windows
-                              // Other providers: show single usage percentage
-                              let usedPercents: [Double]
-                              if identifier == .claude || identifier == .kimi,
-                                 let fiveHour = account.details?.fiveHourUsage,
-                                 let sevenDay = account.details?.sevenDayUsage {
-                                  usedPercents = [fiveHour, sevenDay]
-                              } else if identifier == .codex,
-                                        let secondary = account.details?.secondaryUsage {
-                                  usedPercents = [account.usage.usagePercentage, secondary]
-                              } else {
-                                  usedPercents = [account.usage.usagePercentage]
-                              }
-                              let item = createNativeQuotaMenuItem(name: displayName, usedPercents: usedPercents, icon: iconForProvider(identifier))
-                              item.tag = 999
+            if let result = providerResults[identifier] {
+                if let accounts = result.accounts, !accounts.isEmpty {
+                    let authLabels = Set(
+                        accounts.map { account in
+                            authSourceLabel(for: account.details?.authSource, provider: identifier) ?? "Unknown"
+                        }
+                    )
+                    let showAuthLabel = authLabels.count > 1
+                    let baseName = multiAccountBaseName(for: identifier)
+                    for account in accounts {
+                        hasQuota = true
+                        var displayName = accounts.count > 1 ? "\(baseName) #\(account.accountIndex + 1)" : baseName
+                        if accounts.count > 1, showAuthLabel {
+                            let sourceLabel = authSourceLabel(for: account.details?.authSource, provider: identifier) ?? "Unknown"
+                            displayName += " (\(sourceLabel))"
+                        }
+                        if (account.usage.totalEntitlement ?? 0) == 0 {
+                            displayName += " (No usage data)"
+                        }
 
-                              if let details = account.details, details.hasAnyValue {
-                                  item.submenu = createDetailSubmenu(details, identifier: identifier, accountId: account.accountId)
-                              }
+                        // Build percentage array for display
+                        // Claude/Kimi: show both 5h and 7d usage windows
+                        // Codex: show both primary (5h) and secondary (weekly) windows
+                        // Other providers: show single usage percentage
+                        let usedPercents: [Double]
+                        if identifier == .claude || identifier == .kimi,
+                           let fiveHour = account.details?.fiveHourUsage,
+                           let sevenDay = account.details?.sevenDayUsage {
+                            usedPercents = [fiveHour, sevenDay]
+                        } else if identifier == .codex,
+                                  let secondary = account.details?.secondaryUsage {
+                            usedPercents = [account.usage.usagePercentage, secondary]
+                        } else {
+                            usedPercents = [account.usage.usagePercentage]
+                        }
+                        let item = createNativeQuotaMenuItem(name: displayName, usedPercents: usedPercents, icon: iconForProvider(identifier))
+                        item.tag = 999
 
-                              menu.insertItem(item, at: insertIndex)
-                              insertIndex += 1
-                          }
-                     } else if case .quotaBased(let remaining, let entitlement, _) = result.usage {
-                          hasQuota = true
-                          let singlePercent = entitlement > 0 ? (Double(entitlement - remaining) / Double(entitlement)) * 100 : 0
-                          
-                          let usedPercents: [Double]
-                          if identifier == .claude || identifier == .kimi,
-                             let fiveHour = result.details?.fiveHourUsage,
-                             let sevenDay = result.details?.sevenDayUsage {
-                              usedPercents = [fiveHour, sevenDay]
-                          } else if identifier == .codex,
-                                    let secondary = result.details?.secondaryUsage {
-                              usedPercents = [singlePercent, secondary]
-                          } else {
-                              usedPercents = [singlePercent]
-                          }
-                          let item = createNativeQuotaMenuItem(name: identifier.displayName, usedPercents: usedPercents, icon: iconForProvider(identifier))
-                          item.tag = 999
-
-                        if let details = result.details, details.hasAnyValue {
-                            item.submenu = createDetailSubmenu(details, identifier: identifier)
+                        if let details = account.details, details.hasAnyValue {
+                            item.submenu = createDetailSubmenu(details, identifier: identifier, accountId: account.accountId)
                         }
 
                         menu.insertItem(item, at: insertIndex)
                         insertIndex += 1
                     }
-                 } else if let errorMessage = lastProviderErrors[identifier] {
-                      hasQuota = true
-                      let item = createErrorMenuItem(identifier: identifier, errorMessage: errorMessage)
-                      menu.insertItem(item, at: insertIndex)
-                      insertIndex += 1
-                 } else if loadingProviders.contains(identifier) {
-                      hasQuota = true
-                      let item = NSMenuItem(title: "\(identifier.displayName) (Loading...)", action: nil, keyEquivalent: "")
-                      item.image = iconForProvider(identifier)
-                      item.isEnabled = false
-                      item.tag = 999
-                      menu.insertItem(item, at: insertIndex)
-                      insertIndex += 1
-                  }
-             }
+                } else if case .quotaBased(let remaining, let entitlement, _) = result.usage {
+                    hasQuota = true
+                    let singlePercent = entitlement > 0 ? (Double(entitlement - remaining) / Double(entitlement)) * 100 : 0
 
-            if isProviderEnabled(.geminiCLI) {
-                if let result = providerResults[.geminiCLI],
-                   let details = result.details,
-                   let geminiAccounts = details.geminiAccounts,
-                   !geminiAccounts.isEmpty {
-
-                     let geminiAuthLabels = Set(
-                         geminiAccounts.map { account in
-                             authSourceLabel(for: account.authSource, provider: .geminiCLI) ?? "Unknown"
-                         }
-                     )
-                     let showGeminiAuthLabel = geminiAuthLabels.count > 1
-
-                     for account in geminiAccounts {
-                         hasQuota = true
-                         let accountNumber = account.accountIndex + 1
-                         let usedPercent = 100 - account.remainingPercentage
-                         var displayName = geminiAccounts.count > 1
-                              ? "Gemini CLI #\(accountNumber)"
-                              : "Gemini CLI"
-                         if geminiAccounts.count > 1, showGeminiAuthLabel {
-                             let sourceLabel = authSourceLabel(for: account.authSource, provider: .geminiCLI) ?? "Unknown"
-                             displayName += " (\(sourceLabel))"
-                         }
-                          let item = createNativeQuotaMenuItem(name: displayName, usedPercent: usedPercent, icon: iconForProvider(.geminiCLI))
-                          item.tag = 999
-
-                        item.submenu = createGeminiAccountSubmenu(account)
-
-                        menu.insertItem(item, at: insertIndex)
-                        insertIndex += 1
+                    let usedPercents: [Double]
+                    if identifier == .claude || identifier == .kimi,
+                       let fiveHour = result.details?.fiveHourUsage,
+                       let sevenDay = result.details?.sevenDayUsage {
+                        usedPercents = [fiveHour, sevenDay]
+                    } else if identifier == .codex,
+                              let secondary = result.details?.secondaryUsage {
+                        usedPercents = [singlePercent, secondary]
+                    } else {
+                        usedPercents = [singlePercent]
                     }
-                } else if let errorMessage = lastProviderErrors[.geminiCLI] {
-                    hasQuota = true
-                    let item = createErrorMenuItem(identifier: .geminiCLI, errorMessage: errorMessage)
-                    menu.insertItem(item, at: insertIndex)
-                    insertIndex += 1
-                } else if loadingProviders.contains(.geminiCLI) {
-                    hasQuota = true
-                    let item = NSMenuItem(title: "Gemini CLI (Loading...)", action: nil, keyEquivalent: "")
-                    item.image = iconForProvider(.geminiCLI)
-                    item.isEnabled = false
+                    let item = createNativeQuotaMenuItem(name: identifier.displayName, usedPercents: usedPercents, icon: iconForProvider(identifier))
                     item.tag = 999
+
+                    if let details = result.details, details.hasAnyValue {
+                        item.submenu = createDetailSubmenu(details, identifier: identifier)
+                    }
+
                     menu.insertItem(item, at: insertIndex)
                     insertIndex += 1
                 }
+            } else if let errorMessage = lastProviderErrors[identifier] {
+                hasQuota = true
+                let item = createErrorMenuItem(identifier: identifier, errorMessage: errorMessage)
+                menu.insertItem(item, at: insertIndex)
+                insertIndex += 1
+            } else if loadingProviders.contains(identifier) {
+                hasQuota = true
+                let item = NSMenuItem(title: "\(identifier.displayName) (Loading...)", action: nil, keyEquivalent: "")
+                item.image = iconForProvider(identifier)
+                item.isEnabled = false
+                item.tag = 999
+                menu.insertItem(item, at: insertIndex)
+                insertIndex += 1
             }
+        }
+
+        if isProviderEnabled(.geminiCLI) {
+            if let result = providerResults[.geminiCLI],
+               let details = result.details,
+               let geminiAccounts = details.geminiAccounts,
+               !geminiAccounts.isEmpty {
+                let geminiAuthLabels = Set(
+                    geminiAccounts.map { account in
+                        authSourceLabel(for: account.authSource, provider: .geminiCLI) ?? "Unknown"
+                    }
+                )
+                let showGeminiAuthLabel = geminiAuthLabels.count > 1
+
+                for account in geminiAccounts {
+                    hasQuota = true
+                    let accountNumber = account.accountIndex + 1
+                    let usedPercent = 100 - account.remainingPercentage
+                    var displayName = geminiAccounts.count > 1
+                        ? "Gemini CLI #\(accountNumber)"
+                        : "Gemini CLI"
+                    if geminiAccounts.count > 1, showGeminiAuthLabel {
+                        let sourceLabel = authSourceLabel(for: account.authSource, provider: .geminiCLI) ?? "Unknown"
+                        displayName += " (\(sourceLabel))"
+                    }
+                    let item = createNativeQuotaMenuItem(
+                        name: displayName,
+                        usedPercent: usedPercent,
+                        icon: iconForProvider(.geminiCLI)
+                    )
+                    item.tag = 999
+
+                    item.submenu = createGeminiAccountSubmenu(account)
+
+                    menu.insertItem(item, at: insertIndex)
+                    insertIndex += 1
+                }
+            } else if let errorMessage = lastProviderErrors[.geminiCLI] {
+                hasQuota = true
+                let item = createErrorMenuItem(identifier: .geminiCLI, errorMessage: errorMessage)
+                menu.insertItem(item, at: insertIndex)
+                insertIndex += 1
+            } else if loadingProviders.contains(.geminiCLI) {
+                hasQuota = true
+                let item = NSMenuItem(title: "Gemini CLI (Loading...)", action: nil, keyEquivalent: "")
+                item.image = iconForProvider(.geminiCLI)
+                item.isEnabled = false
+                item.tag = 999
+                menu.insertItem(item, at: insertIndex)
+                insertIndex += 1
+            }
+        }
 
         if !hasQuota {
             let noItem = NSMenuItem()
@@ -1005,21 +1090,21 @@ final class StatusBarController: NSObject {
         logMenuStructure()
     }
 
-     private func logMenuStructure() {
-         let total = menu.items.count
-         let separators = menu.items.filter { $0.isSeparatorItem }.count
-         let withAction = menu.items.filter { !$0.isSeparatorItem && $0.action != nil }.count
-         let withSubmenu = menu.items.filter { $0.hasSubmenu }.count
-         
-         logger.info("📋 [Menu] Items: \(total) (sep:\(separators), actions:\(withAction), submenus:\(withSubmenu))")
-         
-         var output = "\n========== MENU STRUCTURE ==========\n"
-         for (index, item) in menu.items.enumerated() {
-             output += logMenuItem(item, depth: 0, index: index)
-         }
-         output += "====================================\n"
-         debugLog(output)
-     }
+    private func logMenuStructure() {
+        let total = menu.items.count
+        let separators = menu.items.filter { $0.isSeparatorItem }.count
+        let withAction = menu.items.filter { !$0.isSeparatorItem && $0.action != nil }.count
+        let withSubmenu = menu.items.filter { $0.hasSubmenu }.count
+
+        logger.info("📋 [Menu] Items: \(total) (sep:\(separators), actions:\(withAction), submenus:\(withSubmenu))")
+
+        var output = "\n========== MENU STRUCTURE ==========\n"
+        for (index, item) in menu.items.enumerated() {
+            output += logMenuItem(item, depth: 0, index: index)
+        }
+        output += "====================================\n"
+        debugLog(output)
+    }
 
     private func logMenuItem(_ item: NSMenuItem, depth: Int, index: Int) -> String {
         let indent = String(repeating: "  ", count: depth)
@@ -1209,7 +1294,8 @@ final class StatusBarController: NSObject {
 
     private func createErrorMenuItem(identifier: ProviderIdentifier, errorMessage: String) -> NSMenuItem {
         let isAuthError = isAuthenticationError(errorMessage)
-        let statusText = isAuthError ? "No Credentials" : "Error"
+        let isSubscriptionError = errorMessage.lowercased().contains("subscription")
+        let statusText = isSubscriptionError ? "No Subscription" : (isAuthError ? "No Credentials" : "Error")
         let title = "\(identifier.displayName) (\(statusText))"
 
         let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
@@ -1245,6 +1331,8 @@ final class StatusBarController: NSObject {
             image = NSImage(systemSymbolName: identifier.iconName, accessibilityDescription: identifier.displayName)
         case .zaiCodingPlan:
             image = NSImage(named: "ZaiIcon")
+        case .synthetic:
+            image = NSImage(named: "SyntheticIcon")
         case .chutes:
             image = NSImage(named: "ChutesIcon")
         }

@@ -33,10 +33,11 @@ struct OpenCodeAuth: Codable {
     let opencode: APIKey?
     let kimiForCoding: APIKey?
     let zaiCodingPlan: APIKey?
+    let synthetic: APIKey?
     let chutes: APIKey?
 
     enum CodingKeys: String, CodingKey {
-        case anthropic, openai, openrouter, opencode, chutes
+        case anthropic, openai, openrouter, opencode, synthetic, chutes
         case githubCopilot = "github-copilot"
         case kimiForCoding = "kimi-for-coding"
         case zaiCodingPlan = "zai-coding-plan"
@@ -50,6 +51,7 @@ struct OpenCodeAuth: Codable {
         opencode: APIKey?,
         kimiForCoding: APIKey?,
         zaiCodingPlan: APIKey?,
+        synthetic: APIKey?,
         chutes: APIKey? = nil
     ) {
         self.anthropic = anthropic
@@ -59,6 +61,7 @@ struct OpenCodeAuth: Codable {
         self.opencode = opencode
         self.kimiForCoding = kimiForCoding
         self.zaiCodingPlan = zaiCodingPlan
+        self.synthetic = synthetic
         self.chutes = chutes
     }
 
@@ -71,6 +74,7 @@ struct OpenCodeAuth: Codable {
         opencode = try container.decodeIfPresent(APIKey.self, forKey: .opencode)
         kimiForCoding = try container.decodeIfPresent(APIKey.self, forKey: .kimiForCoding)
         zaiCodingPlan = try container.decodeIfPresent(APIKey.self, forKey: .zaiCodingPlan)
+        synthetic = try container.decodeIfPresent(APIKey.self, forKey: .synthetic)
         chutes = try container.decodeIfPresent(APIKey.self, forKey: .chutes)
     }
 
@@ -83,6 +87,7 @@ struct OpenCodeAuth: Codable {
         try container.encodeIfPresent(opencode, forKey: .opencode)
         try container.encodeIfPresent(kimiForCoding, forKey: .kimiForCoding)
         try container.encodeIfPresent(zaiCodingPlan, forKey: .zaiCodingPlan)
+        try container.encodeIfPresent(synthetic, forKey: .synthetic)
         try container.encodeIfPresent(chutes, forKey: .chutes)
     }
 }
@@ -1144,6 +1149,11 @@ final class TokenManager: @unchecked Sendable {
         return auth.zaiCodingPlan?.key
     }
 
+    func getSyntheticAPIKey() -> String? {
+        guard let auth = readOpenCodeAuth() else { return nil }
+        return auth.synthetic?.key
+    }
+
     func getChutesAPIKey() -> String? {
         guard let auth = readOpenCodeAuth() else { return nil }
         return auth.chutes?.key
@@ -1896,4 +1906,5 @@ final class TokenManager: @unchecked Sendable {
             }
         }
     }
+
 }

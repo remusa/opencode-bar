@@ -460,6 +460,28 @@ extension StatusBarController {
 
             addSubscriptionItems(to: submenu, provider: .chutes)
 
+        case .synthetic:
+            if let fiveHour = details.fiveHourUsage {
+                let rows = createUsageWindowRow(
+                    label: "5h",
+                    usagePercent: fiveHour,
+                    resetDate: details.fiveHourReset,
+                    windowHours: 5
+                )
+                rows.forEach { submenu.addItem($0) }
+            }
+            if let limit = details.limit, let remaining = details.limitRemaining {
+                let item = NSMenuItem()
+                item.view = createDisabledLabelView(
+                    text: String(format: "Limit: %.1f/%.1f", remaining, limit),
+                    icon: NSImage(systemSymbolName: "chart.bar", accessibilityDescription: "Limit")
+                )
+                submenu.addItem(item)
+            }
+            submenu.addItem(NSMenuItem.separator())
+            addSubscriptionItems(to: submenu, provider: .synthetic)
+            debugLog("createDetailSubmenu: added subscription items for Synthetic")
+
         default:
             break
         }
