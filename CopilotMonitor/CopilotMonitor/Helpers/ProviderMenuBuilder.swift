@@ -167,7 +167,9 @@ extension StatusBarController {
         case .copilot:
             // === Usage ===
             if let used = details.copilotUsedRequests, let limit = details.copilotLimitRequests, limit > 0 {
-                let filledBlocks = Int((Double(used) / Double(max(limit, 1))) * 10)
+                let usageRatio = Double(used) / Double(max(limit, 1))
+                let normalizedUsageRatio = min(max(usageRatio, 0), 1)
+                let filledBlocks = Int(normalizedUsageRatio * 10)
                 let emptyBlocks = 10 - filledBlocks
                 let progressBar = String(repeating: "═", count: filledBlocks) + String(repeating: "░", count: emptyBlocks)
                 let progressItem = NSMenuItem()
