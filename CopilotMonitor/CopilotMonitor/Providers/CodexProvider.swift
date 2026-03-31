@@ -302,20 +302,24 @@ final class CodexProvider: ProviderProtocol {
     }
 
     private func fetchUsageForAccount(_ account: OpenAIAuthAccount) async throws -> CodexAccountCandidate {
-        let endpoint = "https://chatgpt.com/backend-api/wham/usage"
-        guard let url = URL(string: endpoint) else {
-            logger.error("Invalid Codex API endpoint URL")
-            throw ProviderError.networkError("Invalid endpoint URL")
-        }
+        let endpointConfiguration = TokenManager.shared.getCodexEndpointConfiguration()
+        let url = try codexUsageURL(for: endpointConfiguration)
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(account.accessToken)", forHTTPHeaderField: "Authorization")
-        if let accountId = account.accountId, !accountId.isEmpty {
+        let requestAccountId = codexRequestAccountID(for: account, endpointMode: endpointConfiguration.mode)
+        if let accountId = requestAccountId, !accountId.isEmpty {
             request.setValue(accountId, forHTTPHeaderField: "ChatGPT-Account-Id")
         } else {
-            logger.warning("Codex account ID missing for \(account.authSource), sending request without account header")
+            logger.warning(
+                "Codex account ID missing for \(account.authSource, privacy: .public) using endpoint source \(endpointConfiguration.source, privacy: .public); sending request without account header"
+            )
         }
+
+        logger.debug(
+            "Codex endpoint resolved: url=\(url.absoluteString, privacy: .public), source=\(endpointConfiguration.source, privacy: .public), external_mode=\(self.isExternalEndpointMode(endpointConfiguration.mode) ? "YES" : "NO"), account_header=\(requestAccountId != nil ? "YES" : "NO")"
+        )
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -435,6 +439,38 @@ final class CodexProvider: ProviderProtocol {
             sourceLabels: sourceLabels,
             source: account.source
         )
+    }
+
+    func codexUsageURL(for configuration: CodexEndpointConfiguration) throws -> URL {
+        switch configuration.mode {
+        case .directChatGPT:
+            guard let url = URL(string: "https://chatgpt.com/backend-api/wham/usage") else {
+                logger.error("Default Codex usage URL is invalid; aborting request")
+                throw ProviderError.providerError("Default Codex usage URL is invalid")
+            }
+            return url
+        case .external(let usageURL):
+            return usageURL
+        }
+    }
+
+    func codexRequestAccountID(for account: OpenAIAuthAccount, endpointMode: CodexEndpointMode) -> String? {
+        switch endpointMode {
+        case .directChatGPT:
+            return account.accountId
+        case .external:
+            if account.source == .codexLB {
+                return account.externalUsageAccountId ?? account.accountId
+            }
+            return account.accountId
+        }
+    }
+
+    func isExternalEndpointMode(_ mode: CodexEndpointMode) -> Bool {
+        if case .external = mode {
+            return true
+        }
+        return false
     }
 
     private func isSameUsage(_ lhs: CodexAccountCandidate, _ rhs: CodexAccountCandidate) -> Bool {
