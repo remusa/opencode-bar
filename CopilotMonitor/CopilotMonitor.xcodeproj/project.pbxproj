@@ -97,6 +97,7 @@
 		OCAUTHTESTBF11111111111 /* OpenCodeAuthDecodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OCAUTHTESTFR11111111111 /* OpenCodeAuthDecodingTests.swift */; };
 		OCZENTESTBF111111111111 /* OpenCodeZenProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OCZENTESTFR111111111111 /* OpenCodeZenProviderTests.swift */; };
 		CLAUDETESTBF11111111111 /* ClaudeProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLAUDETESTFR11111111111 /* ClaudeProviderTests.swift */; };
+		DEEPSEEKTESTBF111111111 /* DeepSeekProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEEPSEEKTESTFR111111111 /* DeepSeekProviderTests.swift */; };
 		ME1111111111111111111111 /* MenuEnums.swift in Sources */ = {isa = PBXBuildFile; fileRef = ME2222222222222222222222 /* MenuEnums.swift */; };
 		OC1111111111111111111111 /* OpenCodeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = OC2222222222222222222222 /* OpenCodeProvider.swift */; };
 		OR1111111111111111111111 /* OpenRouterProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = OR2222222222222222222222 /* OpenRouterProvider.swift */; };
@@ -241,6 +242,7 @@
 		OCAUTHTESTFR11111111111 /* OpenCodeAuthDecodingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeAuthDecodingTests.swift; sourceTree = "<group>"; };
 		OCZENTESTFR111111111111 /* OpenCodeZenProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeZenProviderTests.swift; sourceTree = "<group>"; };
 		CLAUDETESTFR11111111111 /* ClaudeProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeProviderTests.swift; sourceTree = "<group>"; };
+		DEEPSEEKTESTFR111111111 /* DeepSeekProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepSeekProviderTests.swift; sourceTree = "<group>"; };
 		TDDDDDDDDDDDDDDDDDDDDDD /* CopilotMonitorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CopilotMonitorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -470,6 +472,7 @@
 				OCAUTHTESTFR11111111111 /* OpenCodeAuthDecodingTests.swift */,
 				OCZENTESTFR111111111111 /* OpenCodeZenProviderTests.swift */,
 				CLAUDETESTFR11111111111 /* ClaudeProviderTests.swift */,
+				DEEPSEEKTESTFR111111111 /* DeepSeekProviderTests.swift */,
 			);
 			path = CopilotMonitorTests;
 			sourceTree = "<group>";
@@ -732,6 +735,7 @@
 			OCAUTHTESTBF11111111111 /* OpenCodeAuthDecodingTests.swift in Sources */,
 			OCZENTESTBF111111111111 /* OpenCodeZenProviderTests.swift in Sources */,
 			CLAUDETESTBF11111111111 /* ClaudeProviderTests.swift in Sources */,
+			DEEPSEEKTESTBF111111111 /* DeepSeekProviderTests.swift in Sources */,
 		);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
