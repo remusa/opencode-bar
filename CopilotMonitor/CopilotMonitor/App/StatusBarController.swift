@@ -3082,7 +3082,7 @@ final class StatusBarController: NSObject {
         case .braveSearch:
             image = NSImage(named: "BraveSearchIcon")
         case .deepSeek:
-            image = NSImage(systemSymbolName: identifier.iconName, accessibilityDescription: identifier.displayName)
+            image = NSImage(named: "DeepSeekIcon")
         }
 
          // Keep consistent icon sizing and make Gemini slightly larger.
