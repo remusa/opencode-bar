@@ -225,9 +225,11 @@ struct OpenCodeAuth: Codable {
     let nanoGpt: APIKey?
     let synthetic: APIKey?
     let chutes: APIKey?
+    let deepSeek: APIKey?
 
     enum CodingKeys: String, CodingKey {
         case anthropic, openai, openrouter, opencode, synthetic, chutes
+        case deepSeek = "deepseek"
         case openCodeGo = "opencode-go"
         case githubCopilot = "github-copilot"
         case kimiForCoding = "kimi-for-coding"
@@ -249,7 +251,8 @@ struct OpenCodeAuth: Codable {
         zaiCodingPlan: APIKey?,
         nanoGpt: APIKey?,
         synthetic: APIKey?,
-        chutes: APIKey? = nil
+        chutes: APIKey? = nil,
+        deepSeek: APIKey? = nil
     ) {
         self.anthropic = anthropic
         self.openai = openai
@@ -264,6 +267,7 @@ struct OpenCodeAuth: Codable {
         self.nanoGpt = nanoGpt
         self.synthetic = synthetic
         self.chutes = chutes
+        self.deepSeek = deepSeek
     }
 
     init(from decoder: Decoder) throws {
@@ -284,6 +288,7 @@ struct OpenCodeAuth: Codable {
         nanoGpt = Self.decodeLossyIfPresent(APIKey.self, from: container, forKey: .nanoGpt)
         synthetic = Self.decodeLossyIfPresent(APIKey.self, from: container, forKey: .synthetic)
         chutes = Self.decodeLossyIfPresent(APIKey.self, from: container, forKey: .chutes)
+        deepSeek = Self.decodeLossyIfPresent(APIKey.self, from: container, forKey: .deepSeek)
 
         if anthropic == nil,
            openai == nil,
@@ -297,7 +302,8 @@ struct OpenCodeAuth: Codable {
            zaiCodingPlan == nil,
            nanoGpt == nil,
            synthetic == nil,
-           chutes == nil {
+           chutes == nil,
+           deepSeek == nil {
             throw DecodingError.dataCorrupted(
                 DecodingError.Context(
                     codingPath: container.codingPath,
@@ -335,6 +341,7 @@ struct OpenCodeAuth: Codable {
         try container.encodeIfPresent(nanoGpt, forKey: .nanoGpt)
         try container.encodeIfPresent(synthetic, forKey: .synthetic)
         try container.encodeIfPresent(chutes, forKey: .chutes)
+        try container.encodeIfPresent(deepSeek, forKey: .deepSeek)
     }
 }
 
@@ -4273,6 +4280,11 @@ final class TokenManager: @unchecked Sendable {
     func getChutesAPIKey() -> String? {
         guard let auth = readOpenCodeAuth() else { return nil }
         return auth.chutes?.key
+    }
+
+    func getDeepSeekAPIKey() -> String? {
+        guard let auth = readOpenCodeAuth() else { return nil }
+        return auth.deepSeek?.key
     }
 
     func getTavilyAPIKey() -> String? {

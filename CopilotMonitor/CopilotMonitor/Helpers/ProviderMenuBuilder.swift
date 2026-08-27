@@ -108,6 +108,28 @@ extension StatusBarController {
                 }
             }
 
+        case .deepSeek:
+            if let total = details.totalCredits {
+                let item = NSMenuItem()
+                item.view = createDisabledLabelView(text: String(format: "Balance: $%.2f", total))
+                submenu.addItem(item)
+            }
+            if let remaining = details.creditsRemaining {
+                let item = NSMenuItem()
+                item.view = createDisabledLabelView(text: String(format: "Remaining: $%.2f", remaining))
+                submenu.addItem(item)
+            }
+            if let authSource = details.authSource {
+                submenu.addItem(NSMenuItem.separator())
+                let authItem = NSMenuItem()
+                authItem.view = createDisabledLabelView(
+                    text: "Token From: \(authSource)",
+                    icon: NSImage(systemSymbolName: "key", accessibilityDescription: "Auth Source"),
+                    multiline: true
+                )
+                submenu.addItem(authItem)
+            }
+
         case .copilot:
             // === Usage ===
             if let used = details.copilotUsedRequests, let limit = details.copilotLimitRequests, limit > 0 {

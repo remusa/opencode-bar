@@ -1033,7 +1033,7 @@ final class StatusBarController: NSObject {
             add(details?.fiveHourUsage, priority: .hourly)
         case .tavilySearch, .braveSearch:
             add(details?.mcpUsagePercent, priority: .monthly)
-        case .antigravity, .geminiCLI, .openRouter, .openCode, .openCodeZen:
+        case .antigravity, .geminiCLI, .openRouter, .openCode, .openCodeZen, .deepSeek:
             break
         }
 
@@ -1659,7 +1659,7 @@ final class StatusBarController: NSObject {
 
          var hasPayAsYouGo = false
 
-            let payAsYouGoOrder: [ProviderIdentifier] = [.openRouter, .openCodeZen]
+            let payAsYouGoOrder: [ProviderIdentifier] = [.openRouter, .openCodeZen, .deepSeek]
             for identifier in payAsYouGoOrder {
                 guard isProviderEnabled(identifier) else { continue }
 
@@ -3081,6 +3081,8 @@ final class StatusBarController: NSObject {
             image = NSImage(named: "TavilyIcon")
         case .braveSearch:
             image = NSImage(named: "BraveSearchIcon")
+        case .deepSeek:
+            image = NSImage(systemSymbolName: identifier.iconName, accessibilityDescription: identifier.displayName)
         }
 
          // Keep consistent icon sizing and make Gemini slightly larger.

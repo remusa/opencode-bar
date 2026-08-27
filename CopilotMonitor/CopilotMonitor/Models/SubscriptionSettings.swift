@@ -240,6 +240,8 @@ struct ProviderSubscriptionPresets {
             return synthetic
         case .chutes:
             return chutes
+        case .deepSeek:
+            return []
         }
     }
 }
