@@ -20,12 +20,14 @@
 
 ---
 
+> **⚠️ Fork Notice:** This is a community fork of [opgginc/opencode-bar](https://github.com/opgginc/opencode-bar) with added **DeepSeek** provider support. This project is not built by, maintained by, or affiliated with the OpenCode team. For the original upstream, see [opgginc/opencode-bar](https://github.com/opgginc/opencode-bar).
+
 ## Installation
 
 ### Homebrew (Easy)
 
 ```bash
-brew install --cask opgginc/tap/opencode-bar
+brew install --cask remusa/tap/opencode-bar
 ```
 
 ### Download
@@ -57,6 +59,7 @@ Download the latest `.dmg` file from the [**Releases**](https://github.com/opggi
 | **Synthetic** | Quota-based | 5h usage limit, request limits, reset time |
 | **Antigravity** | Quota-based | Local cache reverse parsing (`state.vscdb`), no localhost dependency |
 | **Chutes AI** | Quota-based | Daily quota limits (300/2000/5000), credits balance |
+| **DeepSeek** | Pay-as-you-go | Credit balance, granted vs topped-up breakdown |
 | **GitHub Copilot** | Quota-based | Multi-account, daily history, overage tracking, auth source labels |
 
 ### OpenCode Plugins
@@ -318,6 +321,16 @@ $ opencodebar status --json
 | 3 | Network error |
 | 4 | Invalid arguments |
 
+### DeepSeek Notes
+
+- DeepSeek uses a **pay-as-you-go** billing model with prepaid credits
+- The provider reads the `deepseek` entry from OpenCode's `auth.json`
+- Balance is fetched from `GET https://api.deepseek.com/user/balance`
+- Response includes `total_balance`, `granted_balance`, and `topped_up_balance`
+- The menu bar shows remaining credit balance (e.g., `$12.50`)
+- The submenu displays the balance breakdown and auth source
+- No quota-based tracking (credits are topped up, not consumed from a quota)
+
 ### Menu Structure
 
 ```
@@ -325,6 +338,7 @@ $ opencodebar status --json
 Pay-as-you-go: $37.61
   OpenRouter       $37.42    ▸
   OpenCode Zen     $0.19     ▸
+  DeepSeek         $12.50    ▸
 ─────────────────────────────
 Quota Status: $219/m
   Copilot          0%        ▸

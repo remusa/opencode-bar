@@ -86,6 +86,8 @@
 		KIROTESTBF11111111111 /* KiroProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = KIROTESTFR11111111111 /* KiroProviderTests.swift */; };
 		MINIMAXJSONBF11111111111 /* minimax_response.json in Resources */ = {isa = PBXBuildFile; fileRef = MINIMAXJSONFR11111111111 /* minimax_response.json */; };
 		BRAVEAPP1111111111111111 /* BraveSearchProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BRAVEFILE22222222222222 /* BraveSearchProvider.swift */; };
+		DEEPSEEKAPP1111111111111 /* DeepSeekProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEEPSEEKFILE222222222222 /* DeepSeekProvider.swift */; };
+		DEEPSEEKCLI1111111111111 /* DeepSeekProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEEPSEEKFILE222222222222 /* DeepSeekProvider.swift */; };
 		TAVILYAPP111111111111111 /* TavilySearchProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = TAVILYFILE22222222222222 /* TavilySearchProvider.swift */; };
 		SYNTHETIC1111111111111111 /* SyntheticProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = SYNTHETIC2222222222222222 /* SyntheticProvider.swift */; };
 		SYNTHTEST2222222222222222 /* SyntheticProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SYNTHTEST1111111111111111 /* SyntheticProviderTests.swift */; };
@@ -214,6 +216,7 @@
 		KIROTESTFR11111111111 /* KiroProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiroProviderTests.swift; sourceTree = "<group>"; };
 		MINIMAXJSONFR11111111111 /* minimax_response.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = minimax_response.json; sourceTree = "<group>"; };
 		BRAVEFILE22222222222222 /* BraveSearchProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BraveSearchProvider.swift; sourceTree = "<group>"; };
+		DEEPSEEKFILE222222222222 /* DeepSeekProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepSeekProvider.swift; sourceTree = "<group>"; };
 		TAVILYFILE22222222222222 /* TavilySearchProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TavilySearchProvider.swift; sourceTree = "<group>"; };
 		ME2222222222222222222222 /* MenuEnums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuEnums.swift; sourceTree = "<group>"; };
 		OC2222222222222222222222 /* OpenCodeProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OpenCodeProvider.swift; sourceTree = "<group>"; };
@@ -308,6 +311,7 @@
 				283349002F313176004DADE1 /* ChutesProvider.swift */,
 				TAVILYFILE22222222222222 /* TavilySearchProvider.swift */,
 				BRAVEFILE22222222222222 /* BraveSearchProvider.swift */,
+				DEEPSEEKFILE222222222222 /* DeepSeekProvider.swift */,
 				SYNTHETIC2222222222222222 /* SyntheticProvider.swift */,
 			);
 			path = Providers;
@@ -642,6 +646,7 @@
 			283349022F313176004DADE1 /* ChutesProvider.swift in Sources */,
 			CLITAVILY111111111111111 /* TavilySearchProvider.swift in Sources */,
 			CLIBRAVE1111111111111111 /* BraveSearchProvider.swift in Sources */,
+			DEEPSEEKCLI1111111111111 /* DeepSeekProvider.swift in Sources */,
 			CLISYNTHETIC1111111111111 /* SyntheticProvider.swift in Sources */,
 			CLIPROVMGR11111111111111 /* CLIProviderManager.swift in Sources */,
 			CLICOPILOT11111111111111 /* CopilotCLIProvider.swift in Sources */,
@@ -688,6 +693,7 @@
 				283349012F313176004DADE1 /* ChutesProvider.swift in Sources */,
 				TAVILYAPP111111111111111 /* TavilySearchProvider.swift in Sources */,
 				BRAVEAPP1111111111111111 /* BraveSearchProvider.swift in Sources */,
+				DEEPSEEKAPP1111111111111 /* DeepSeekProvider.swift in Sources */,
 				SYNTHETIC1111111111111111 /* SyntheticProvider.swift in Sources */,
 				283348FF2F313096004DADE1 /* BrowserCookieService.swift in Sources */,
 				6C4146861DE2C13836DE1D35 /* CopilotHistoryService.swift in Sources */,
